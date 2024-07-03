@@ -1,6 +1,8 @@
 package cmd
 
 import (
+	"flag"
+
 	"github.com/jnafolayan/sip/internal/cli"
 )
 
@@ -9,5 +11,5 @@ var rootCmd = &cli.Command{
 }
 
 func Execute() error {
-	return rootCmd.Execute()
+	return rootCmd.Execute(flag.Args())
 }

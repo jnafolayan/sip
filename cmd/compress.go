@@ -5,7 +5,13 @@ import (
 
 	"github.com/jnafolayan/sip/internal/cli"
 	"github.com/jnafolayan/sip/internal/imageutils"
+	"github.com/jnafolayan/sip/pkg/haar"
+	"github.com/jnafolayan/sip/pkg/wavelet"
 )
+
+type compressFlags struct {
+	waveletType string
+}
 
 var compressCmd = &cli.Command{
 	Name: "compress",
@@ -19,7 +25,10 @@ var compressCmd = &cli.Command{
 			return fmt.Errorf("compress: %w", err)
 		}
 
-		fmt.Println(img)
+		grayscale := imageutils.Grayscale(img)
+
+		var w wavelet.Wavelet
+		w = &haar.HaarWavelet{}
 
 		return nil
 	},

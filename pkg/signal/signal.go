@@ -10,6 +10,18 @@ import (
 
 type Signal2D [][]float32
 
+func New(width, height int) Signal2D {
+	s := make(Signal2D, height)
+	for i := 0; i < height; i++ {
+		s[i] = make([]float32, width)
+	}
+	return s
+}
+
+func (s Signal2D) Size() (int, int) {
+	return len(s[0]), len(s)
+}
+
 // Clone returns a deep clone of the signal
 func (s Signal2D) Clone() Signal2D {
 	result := make(Signal2D, len(s))
@@ -60,14 +72,9 @@ const (
 // Pad extends the signal to fit a new size fills empty cells using the pad style
 // specified in `padStyle`.
 func (s Signal2D) Pad(width, height int, padStyle PadStyle) Signal2D {
-	oldWidth := len(s[0])
-	oldHeight := len(s)
-	result := make(Signal2D, height)
+	oldWidth, oldHeight := s.Size()
 
-	// Instantiate rows
-	for i := 0; i < height; i++ {
-		result[i] = make([]float32, width)
-	}
+	result := New(width, height)
 
 	// Copy existing signal
 	var v float32

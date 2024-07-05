@@ -19,6 +19,9 @@ func New(width, height int) Signal2D {
 }
 
 func (s Signal2D) Size() (int, int) {
+	if len(s) == 0 {
+		return 0, 0
+	}
 	return len(s[0]), len(s)
 }
 
@@ -52,6 +55,24 @@ func (s Signal2D) String(bounds image.Rectangle) string {
 
 	// Remove any trailing newline
 	return strings.TrimRight(out.String(), "\n")
+}
+
+func (s Signal2D) Equal(s2 Signal2D) bool {
+	w1, h1 := s.Size()
+	w2, h2 := s2.Size()
+	if w1 != w2 || h1 != h2 {
+		return false
+	}
+
+	for i := 0; i < h1; i++ {
+		for j := 0; j < w1; j++ {
+			if s[i][j] != s2[i][j] {
+				return false
+			}
+		}
+	}
+
+	return true
 }
 
 // Bounds returns a rectangle defining the size of the signal

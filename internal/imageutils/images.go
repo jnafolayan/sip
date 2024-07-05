@@ -37,4 +37,6 @@ func Grayscale(img image.Image) [][]float32 {
 			// grayscale[i][j] = float32(y)
 		}
 	}
+
+	return grayscale
 }

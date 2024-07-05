@@ -1,12 +1,16 @@
 package haar
 
-import "github.com/jnafolayan/sip/pkg/signal"
+import (
+	"fmt"
+
+	"github.com/jnafolayan/sip/pkg/signal"
+)
 
 type HaarWavelet struct {
 	Level int
 }
 
-func (hw *HaarWavelet) Transform(s *signal.Signal2D) signal.Signal2D {
+func (hw *HaarWavelet) Transform(s signal.Signal2D) signal.Signal2D {
 	width, height := s.Size()
 
 	result := s.Clone()
@@ -18,10 +22,15 @@ func (hw *HaarWavelet) Transform(s *signal.Signal2D) signal.Signal2D {
 		level := 1
 		for level <= hw.Level {
 			w := width / (1 << level)
+			if w == 0 {
+				break
+			}
 			for j := 0; j < w; j++ {
 				tempSignal[i][j] = (result[i][j*2] + result[i][j*2+1]) / 2.0
 				tempSignal[i][j+w] = result[i][j*2] - tempSignal[i][j]
 			}
+			copy(result[i], tempSignal[i])
+			level++
 		}
 	}
 
@@ -31,12 +40,21 @@ func (hw *HaarWavelet) Transform(s *signal.Signal2D) signal.Signal2D {
 		level := 1
 		for level <= hw.Level {
 			h := height / (1 << level)
+			if h == 0 {
+				break
+			}
 			for i := 0; i < h; i++ {
 				tempSignal[i][j] = (result[i*2][j] + result[i*2+1][j]) / 2.0
 				tempSignal[i+h][j] = result[i*2][j] - tempSignal[i][j]
 			}
+			for i := 0; i < h; i++ {
+				result[i] = tempSignal[i]
+			}
+			level++
 		}
 	}
+
+	fmt.Println(result)
 
 	return result
 }

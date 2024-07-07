@@ -1,12 +1,17 @@
 package cli
 
-import "fmt"
+import (
+	"flag"
+	"fmt"
+)
 
 type Command struct {
 	Name        string
 	Desc        string
-	Run         func(args []string) error
+	Run         func(cmd *Command, args []string) error
+	Init        func(cmd *Command)
 	subcommands map[string]*Command
+	FlagSet     *flag.FlagSet
 }
 
 type CommandArgs map[string]any
@@ -18,6 +23,9 @@ func (c *Command) RegisterCmd(cmd *Command) {
 		c.subcommands = make(map[string]*Command)
 	}
 	c.subcommands[cmd.Name] = cmd
+	if cmd.Init != nil {
+		cmd.Init(cmd)
+	}
 }
 
 // hasSubCommands return true if this command has any subcommands.
@@ -37,5 +45,5 @@ func (c *Command) Execute(args []string) error {
 		return fmt.Errorf("no runner defined for %q", c.Name)
 	}
 
-	return c.Run(args)
+	return c.Run(c, args)
 }

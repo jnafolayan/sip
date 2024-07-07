@@ -1,8 +1,6 @@
 package haar
 
 import (
-	"fmt"
-
 	"github.com/jnafolayan/sip/pkg/signal"
 )
 
@@ -10,10 +8,21 @@ type HaarWavelet struct {
 	Level int
 }
 
-func (hw *HaarWavelet) Transform(s signal.Signal2D) signal.Signal2D {
-	width, height := s.Size()
+func getPowerOf2Size(s signal.Signal2D, level int) (int, int) {
+	N, M := s.Size()
+	if N != (N>>level)<<level {
+		N = (N>>level + 1) << level
+	}
+	if M != (M>>level)<<level {
+		M = (M>>level + 1) << level
+	}
+	return N, M
+}
 
-	result := s.Clone()
+func (hw *HaarWavelet) Transform(s signal.Signal2D) signal.Signal2D {
+	width, height := getPowerOf2Size(s, hw.Level)
+	result := s.Clone().Pad(width, height, signal.PadSymmetric)
+
 	tempSignal := signal.New(width, height)
 
 	// Transform rows
@@ -47,19 +56,17 @@ func (hw *HaarWavelet) Transform(s signal.Signal2D) signal.Signal2D {
 				tempSignal[i][j] = (result[i*2][j] + result[i*2+1][j]) / 2.0
 				tempSignal[i+h][j] = result[i*2][j] - tempSignal[i][j]
 			}
-			for i := 0; i < h; i++ {
-				result[i] = tempSignal[i]
+			for i := 0; i < height; i++ {
+				result[i][j] = tempSignal[i][j]
 			}
 			level++
 		}
 	}
 
-	fmt.Println(result)
-
 	return result
 }
 
-func (hw *HaarWavelet) InverseTransform(s *signal.Signal2D) signal.Signal2D {
+func (hw *HaarWavelet) InverseTransform(s signal.Signal2D) signal.Signal2D {
 	width, height := s.Size()
 
 	return signal.New(width, height)

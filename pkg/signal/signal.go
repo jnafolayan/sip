@@ -3,6 +3,7 @@ package signal
 import (
 	"fmt"
 	"image"
+	"image/color"
 	"math"
 	"slices"
 	"strings"
@@ -55,6 +56,21 @@ func (s Signal2D) String(bounds image.Rectangle) string {
 
 	// Remove any trailing newline
 	return strings.TrimRight(out.String(), "\n")
+}
+
+func (s Signal2D) Image() image.Image {
+	w, h := s.Size()
+	img := image.NewRGBA(s.Bounds())
+
+	for i := 0; i < h; i++ {
+		for j := 0; j < w; j++ {
+			shade := uint8(s[i][j])
+			c := color.RGBA{shade, shade, shade, 255}
+			img.Set(j, i, c)
+		}
+	}
+
+	return img
 }
 
 func (s Signal2D) Equal(s2 Signal2D) bool {

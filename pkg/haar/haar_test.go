@@ -15,15 +15,19 @@ func TestHaarTransform(t *testing.T) {
 	}{
 		{
 			1,
-			signal.Signal2D{[]float32{3, 5, 4, 8}},
-			signal.Signal2D{[]float32{4, 6, -1, -2}},
+			signal.Signal2D{{3, 5, 4, 8}},
+			signal.Signal2D{{4, 6, -1, -2}},
+		},
+		{
+			2,
+			signal.Signal2D{{3, 5, 4, 8}},
+			signal.Signal2D{{5, -1, -1, -2}},
 		},
 	}
 
-	hw := &HaarWavelet{Level: 1}
-
 	for _, tt := range tests {
 		t.Run(fmt.Sprintf("Level %d decomposition", tt.level), func(t *testing.T) {
+			hw := &HaarWavelet{Level: tt.level}
 			ts := hw.Transform(tt.signal)
 			if !ts.Equal(tt.expected) {
 				tsStr := ts.String(ts.Bounds())
@@ -32,4 +36,21 @@ func TestHaarTransform(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestHaarTransformTb(t *testing.T) {
+	s := signal.Signal2D{
+		{64, 2, 3, 61, 60, 6, 7, 57},
+		{9, 55, 54, 12, 13, 51, 50, 16},
+		{17, 47, 46, 20, 21, 43, 42, 24},
+		{40, 26, 27, 37, 36, 30, 31, 33},
+		{32, 34, 35, 29, 28, 38, 39, 25},
+		{41, 23, 22, 44, 45, 19, 18, 48},
+		{49, 15, 14, 52, 53, 11, 10, 56},
+		{8, 58, 59, 5, 4, 62, 63, 1},
+	}
+
+	hw := &HaarWavelet{Level: 3}
+	ts := hw.Transform(s)
+	t.Error(ts.String(ts.Bounds()))
 }

@@ -2,6 +2,7 @@ package imageutils
 
 import (
 	"image"
+	"image/jpeg"
 	_ "image/jpeg"
 	_ "image/png"
 	"os"
@@ -19,6 +20,16 @@ func ReadImage(fpath string) (image.Image, error) {
 	}
 
 	return image, nil
+}
+
+func SaveImage(fpath string, img image.Image) error {
+	f, err := os.Create(fpath)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	return jpeg.Encode(f, img, nil)
 }
 
 func Grayscale(img image.Image) [][]float32 {

@@ -29,8 +29,8 @@ func (s Signal2D) Size() (int, int) {
 // Clone returns a deep clone of the signal
 func (s Signal2D) Clone() Signal2D {
 	result := make(Signal2D, len(s))
-	for i, row := range s {
-		result[i] = slices.Clone(row)
+	for i := range s {
+		result[i] = slices.Clone(s[i])
 	}
 	return result
 }
@@ -93,7 +93,7 @@ func (s Signal2D) Equal(s2 Signal2D) bool {
 
 // Bounds returns a rectangle defining the size of the signal
 func (s Signal2D) Bounds() image.Rectangle {
-	return image.Rect(0, 0, len(s), len(s[0]))
+	return image.Rect(0, 0, len(s[0]), len(s))
 }
 
 // PadStyle denotes how new cells in an extended signal will be decided.
@@ -135,4 +135,52 @@ func (s Signal2D) Pad(width, height int, padStyle PadStyle) Signal2D {
 	}
 
 	return result
+}
+
+func (s Signal2D) HardThreshold(offsetX, offsetY, threshold int) Signal2D {
+	width, height := s.Size()
+	result := s.Clone()
+	thresh := float64(threshold)
+
+	for i := offsetY; i < height; i++ {
+		for j := offsetX; j < width; j++ {
+			if math.Abs(float64(s[i][j])) < thresh {
+				result[i][j] = 0
+			}
+		}
+	}
+
+	return result
+}
+
+func (s Signal2D) SoftThreshold(offsetX, offsetY, threshold int) Signal2D {
+	width, height := s.Size()
+	result := s.Clone()
+	thresh := float64(threshold)
+
+	var abs float64
+
+	for i := offsetY; i < height; i++ {
+		for j := offsetX; j < width; j++ {
+			abs = math.Abs(float64(s[i][j]))
+			if abs < thresh {
+				result[i][j] = 0
+			} else {
+				result[i][j] = float32(math.Copysign(abs-thresh, float64(s[i][j])))
+			}
+		}
+	}
+
+	return result
+}
+
+func (s Signal2D) Slice(x1, y1, x2, y2 int) Signal2D {
+	result := New(x2-x1, y2-y1)
+	for y := y1; y < y2; y++ {
+		for x := x1; x < x2; x++ {
+			result[y-y1][x-x1] = s[y][x]
+		}
+	}
+	return result
+
 }

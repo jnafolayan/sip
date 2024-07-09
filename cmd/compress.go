@@ -78,6 +78,10 @@ var compressCmd = &cli.Command{
 		outCr = outCr.Slice(0, 0, width, height)
 
 		output := createImageFromYCbCr(outY, outCb, outCr)
+		// We could use the image that was read in `img` above, but I fear
+		// we must have lost some precision already. It is probably best
+		// to recreate the image from the Y, Cb, Cr components read from
+		// the source.
 		originalImage := createImageFromYCbCr(Y, Cb, Cr)
 
 		// Save to disk

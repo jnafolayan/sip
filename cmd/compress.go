@@ -61,17 +61,12 @@ var compressCmd = &cli.Command{
 		tWidth, tHeight := tY.Size()
 
 		// Threshold channels
-		offsetX := tWidth / (1 << w.GetDecompositionLevel())
-		offsetY := tHeight / (1 << w.GetDecompositionLevel())
+		offsetX := tWidth / (1 << compressFlags.level)
+		offsetY := tHeight / (1 << compressFlags.level)
 		threshold := compressFlags.threshold
 		tY = tY.HardThreshold(offsetX, offsetY, threshold)
 		tCb = tCb.HardThreshold(offsetX, offsetY, threshold)
 		tCr = tCr.HardThreshold(offsetX, offsetY, threshold)
-
-		wd, err := os.Getwd()
-		if err != nil {
-			return err
-		}
 
 		// transformedImage := createImageFromYCbCr(tY, tCb, tCr)
 		outY, outCb, outCr := inverseTransformYCbCr(w, tY, tCb, tCr)
@@ -85,12 +80,18 @@ var compressCmd = &cli.Command{
 		output := createImageFromYCbCr(outY, outCb, outCr)
 		originalImage := createImageFromYCbCr(Y, Cb, Cr)
 
+		// Save to disk
+		wd, err := os.Getwd()
+		if err != nil {
+			return err
+		}
 		outFile := filepath.Join(wd, compressFlags.outputFile)
 		err = imageutils.SaveImage(outFile, output)
 		if err != nil {
 			return err
 		}
 
+		// Peak Signal-to-Noise Ratio
 		psnr := calcPSNR(originalImage, output)
 		fmt.Printf("Peak Signal-to-Noise ratio: %.2f\n", psnr)
 
@@ -157,11 +158,11 @@ func decompressChannel(w wavelet.Wavelet, channel signal.Signal2D, out chan<- si
 func createImageFromYCbCr(Y, Cb, Cr signal.Signal2D) image.Image {
 	width, height := Y.Size()
 	img := image.NewRGBA(image.Rect(0, 0, width, height))
-	for i := 0; i < height; i++ {
-		for j := 0; j < width; j++ {
-			r, g, b := color.YCbCrToRGB(uint8(Y[i][j]), uint8(Cb[i][j]), uint8(Cr[i][j]))
+	for y := 0; y < height; y++ {
+		for x := 0; x < width; x++ {
+			r, g, b := color.YCbCrToRGB(uint8(Y[y][x]), uint8(Cb[y][x]), uint8(Cr[y][x]))
 			c := color.RGBA{r, g, b, 255}
-			img.Set(j, i, c)
+			img.Set(x, y, c)
 		}
 	}
 
@@ -181,22 +182,25 @@ func calcMeanSquaredError(img1, img2 image.Image) float64 {
 	bounds := img1.Bounds()
 	width, height := bounds.Max.X, bounds.Max.Y
 
-	var sum float64
+	var sum, mse float64
+
 	for y := 0; y < height; y++ {
 		for x := 0; x < width; x++ {
 			r1, g1, b1, _ := img1.At(x, y).RGBA()
 			r2, g2, b2, _ := img2.At(x, y).RGBA()
 
 			// Normalize the color values to [0, 255]
-			r1, g1, b1 = r1>>8, g1>>8, b1>>8
-			r2, g2, b2 = r2>>8, g2>>8, b2>>8
+			rr1, gg1, bb1 := float64(r1>>8), float64(g1>>8), float64(b1>>8)
+			rr2, gg2, bb2 := float64(r2>>8), float64(g2>>8), float64(b2>>8)
 
 			// Calculate the squared error for each color channel
-			sum += math.Pow(float64(r1-r2), 2)
-			sum += math.Pow(float64(g1-g2), 2)
-			sum += math.Pow(float64(b1-b2), 2)
+			sum += math.Pow(rr1-rr2, 2)
+			sum += math.Pow(gg1-gg2, 2)
+			sum += math.Pow(bb1-bb2, 2)
 		}
 	}
 
-	return sum / float64(width*height*3)
+	mse = sum / float64(width*height*3)
+
+	return mse
 }

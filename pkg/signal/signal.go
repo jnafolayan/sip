@@ -73,6 +73,8 @@ func (s Signal2D) Image() image.Image {
 	return img
 }
 
+const epsilon = 0.0001
+
 func (s Signal2D) Equal(s2 Signal2D) bool {
 	w1, h1 := s.Size()
 	w2, h2 := s2.Size()
@@ -82,7 +84,7 @@ func (s Signal2D) Equal(s2 Signal2D) bool {
 
 	for i := 0; i < h1; i++ {
 		for j := 0; j < w1; j++ {
-			if s[i][j] != s2[i][j] {
+			if math.Abs(float64(s[i][j]-s2[i][j])) > epsilon {
 				return false
 			}
 		}
@@ -115,7 +117,7 @@ func (s Signal2D) Pad(width, height int, padStyle PadStyle) Signal2D {
 
 	// Copy existing signal
 	var v float32
-	for i := range s {
+	for i := 0; i < oldHeight; i++ {
 		copy(result[i], s[i])
 		// Fill new columns using the pad style specified
 		for j := oldWidth; j < width; j++ {
@@ -175,6 +177,13 @@ func (s Signal2D) SoftThreshold(offsetX, offsetY, threshold int) Signal2D {
 }
 
 func (s Signal2D) Slice(x1, y1, x2, y2 int) Signal2D {
+	width, height := s.Size()
+	if x2 > width {
+		x2 = width
+	}
+	if y2 > height {
+		y2 = height
+	}
 	result := New(x2-x1, y2-y1)
 	for y := y1; y < y2; y++ {
 		for x := x1; x < x2; x++ {

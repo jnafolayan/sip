@@ -1,121 +1,123 @@
 package cdf97
 
-import "github.com/jnafolayan/sip/pkg/signal"
+import (
+	"math"
 
-var analysisLowPassFilter = []float32{
-	0.026748757411, -0.016864118443, -0.078223266529,
-	0.266864118443, 0.602949018236, 0.266864118443,
-	-0.078223266529, -0.016864118443, 0.026748757411,
+	"github.com/jnafolayan/sip/pkg/signal"
+)
+
+func getPowerOf2Size(s signal.Signal2D) (int, int) {
+	N, M := s.Size()
+	N = int(math.Pow(math.Ceil(math.Max(2, math.Log2(float64(N)))), 2))
+	M = int(math.Pow(math.Ceil(math.Max(2, math.Log2(float64(M)))), 2))
+	return N, M
 }
 
-var analysisHighPassFilter = []float32{
-	0, 0.091271763114, -0.057543526229,
-	-0.591271763114, 1.11508705, -0.591271763114,
-	-0.057543526229, 0.091271763114, 0,
-}
-
-func convolve(s, filter []float32) []float32 {
-	result := make([]float32, len(s)+len(filter)-1)
-	for i := 0; i < len(s); i++ {
-		for j := 0; j < len(filter); j++ {
-			result[i+j] += s[i] * filter[j]
-		}
+func getPowerOf2Size2(s signal.Signal2D, level int) (int, int) {
+	N, M := s.Size()
+	if N != (N>>level)<<level {
+		N = (N>>level + 1) << level
 	}
-	return result
-}
-
-func downsample(s []float32) []float32 {
-	result := make([]float32, (len(s)+1)/2)
-	for i := 0; i < len(s); i += 2 {
-		result[i/2] = s[i]
+	if M != (M>>level)<<level {
+		M = (M>>level + 1) << level
 	}
-	return result
-}
-
-func downsampleCols(s signal.Signal2D) signal.Signal2D {
-	width, height := s.Size()
-	result := signal.New(width, (height+1)/2)
-	colData := make([]float32, height)
-
-	for x := 0; x < width; x++ {
-		// Pull out column
-		for y := 0; y < height; y++ {
-			colData[y] = s[y][x]
-		}
-		downsampled := downsample(colData)
-		// Patch the signal with the convolved column
-		for y := 0; y < len(downsampled); y++ {
-			result[y][x] = downsampled[y]
-		}
-	}
-
-	return result
-}
-
-func applyFilterRows(s signal.Signal2D, filter []float32) signal.Signal2D {
-	width, height := s.Size()
-	result := signal.New(width+len(filter)-1, height)
-	for y := 0; y < height; y++ {
-		for x := 0; x < width; x++ {
-			result[y] = convolve(s[y], filter)
-		}
-	}
-	return result
-}
-
-func applyFilterCols(s signal.Signal2D, filter []float32) signal.Signal2D {
-	width, height := s.Size()
-	result := signal.New(width, height+len(filter)-1)
-
-	colData := make([]float32, height)
-	for x := 0; x < width; x++ {
-		// Pull out column
-		for y := 0; y < height; y++ {
-			colData[y] = s[y][x]
-		}
-		filtered := convolve(colData, filter)
-		// Patch the signal with the convolved column
-		for y := 0; y < len(filtered); y++ {
-			result[y][x] = filtered[y]
-		}
-	}
-
-	return result
+	return N, M
 }
 
 func (cdf *CDF97Wavelet) Transform(s signal.Signal2D) signal.Signal2D {
-	ll, _, _, _ := cdf.Decompose(s, cdf.Level)
-	return ll
+	width, height := getPowerOf2Size2(s, cdf.Level)
+	// width, height := s.Size()
+	result := s.Clone()
+	result = result.Pad(width, height, signal.PadZero)
+
+	for level := 0; level < cdf.Level; level++ {
+		// Cols
+		result = cdf.Decompose(result, width, height)
+		result = transpose(result)
+		// Rows
+		result = cdf.Decompose(result, height, width)
+		result = transpose(result)
+
+		width /= 2
+		height /= 2
+	}
+
+	return result
 }
 
-func (cdf *CDF97Wavelet) Decompose(
-	s signal.Signal2D, level int,
-) (signal.Signal2D, signal.Signal2D, signal.Signal2D, signal.Signal2D) {
-	// Apply filters to rows
-	rowsLowPass := applyFilterRows(s, analysisLowPassFilter)
-	rowsHighPass := applyFilterRows(s, analysisHighPassFilter)
+func (cdf *CDF97Wavelet) Decompose(s signal.Signal2D, width, height int) signal.Signal2D {
+	// 9/7 Coefficients:
+	var (
+		a1 float32 = -1.586134342
+		a2 float32 = -0.05298011854
+		a3 float32 = 0.8829110762
+		a4 float32 = 0.4435068522
 
-	// Downsample rows
-	for i := range rowsLowPass {
-		rowsLowPass[i] = downsample(rowsLowPass[i])
-		rowsHighPass[i] = downsample(rowsHighPass[i])
+		// Scale coeff:
+		k1 float32 = 0.81289306611596146 // 1/1.230174104914
+		k2 float32 = 0.61508705245700002 // 1.230174104914/2
+	)
+
+	// if width < 2 || height < 2 {
+	// 	return s
+	// }
+
+	h1 := height - 1
+	if h1 < 0 {
+		h1 += height
+	}
+	h2 := height - 2
+	if h2 < 0 {
+		h2 += height
 	}
 
-	// Apply filters to columns
-	ll := applyFilterCols(rowsLowPass, analysisLowPassFilter)
-	lh := applyFilterCols(rowsLowPass, analysisHighPassFilter)
-	hl := applyFilterCols(rowsHighPass, analysisLowPassFilter)
-	hh := applyFilterCols(rowsHighPass, analysisHighPassFilter)
+	// Do 1D transform on all columns
+	for x := 0; x < width; x++ {
+		// Predict 1.
+		for y := 1; y < height-1; y += 2 {
+			s[y][x] += a1 * (s[y-1][x] + s[y+1][x])
+		}
+		s[h1][x] += 2 * a1 * s[h2][x] // Symmetric extension
 
-	// Downsample columns
-	ll = downsampleCols(ll)
-	lh = downsampleCols(lh)
-	hl = downsampleCols(hl)
-	hh = downsampleCols(hh)
+		// Update 1.
+		for y := 2; y < height; y += 2 {
+			s[y][x] += a2 * (s[y-1][x] + s[y+1][x])
+		}
+		s[0][x] += 2 * a2 * s[1][x] // Symmetric extension
 
-	if level > 1 {
-		ll, _, _, _ = cdf.Decompose(ll, level-1)
+		// Predict 2.
+		for y := 1; y < height-1; y += 2 {
+			s[y][x] += a3 * (s[y-1][x] + s[y+1][x])
+		}
+		s[h1][x] += 2 * a3 * s[h2][x]
+
+		// Update 2.
+		for y := 2; y < height; y += 2 {
+			s[y][x] += a4 * (s[y-1][x] + s[y+1][x])
+		}
+		s[0][x] += 2 * a4 * s[1][x]
 	}
 
-	return ll, lh, hl, hh
+	// De-interleave
+	tempBank := signal.New(width, height)
+	for y := 0; y < height; y++ {
+		for x := 0; x < width; x++ {
+			// k1 and k2 scale the vals
+			// Simultaneously transpose the matrix when deinterleaving
+			if y%2 == 0 {
+				tempBank[x][y/2] = k1 * s[y][x]
+			} else {
+				tempBank[x][y/2+height/2] = k2 * s[y][x]
+			}
+		}
+	}
+
+	// Write tempBank to s
+	for y := 0; y < width; y++ {
+		for x := 0; x < height; x++ {
+			s[y][x] = tempBank[y][x]
+		}
+	}
+
+	return s
 }

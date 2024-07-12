@@ -1,19 +1,12 @@
 package cdf97
 
 import (
-	"math"
-
 	"github.com/jnafolayan/sip/pkg/signal"
 )
 
-func getPowerOf2Size(s signal.Signal2D) (int, int) {
-	N, M := s.Size()
-	N = int(math.Pow(math.Ceil(math.Max(2, math.Log2(float64(N)))), 2))
-	M = int(math.Pow(math.Ceil(math.Max(2, math.Log2(float64(M)))), 2))
-	return N, M
-}
-
-func getPowerOf2Size2(s signal.Signal2D, level int) (int, int) {
+// getNearestMultipleOf2Size return the nearest largest multiple of 2 for each
+// signal dimension.
+func getNearestMultipleOf2Size(s signal.Signal2D, level int) (int, int) {
 	N, M := s.Size()
 	if N != (N>>level)<<level {
 		N = (N>>level + 1) << level
@@ -30,8 +23,7 @@ func getPowerOf2Size2(s signal.Signal2D, level int) (int, int) {
 }
 
 func (cdf *CDF97Wavelet) Transform(s signal.Signal2D) signal.Signal2D {
-	width, height := getPowerOf2Size2(s, cdf.Level)
-	// width, height := s.Size()
+	width, height := getNearestMultipleOf2Size(s, cdf.Level)
 	result := s.Clone()
 	result = result.Pad(width, height, signal.PadSymmetric)
 

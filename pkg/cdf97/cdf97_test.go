@@ -16,12 +16,21 @@ func TestCDF97Transform(t *testing.T) {
 		{
 			1,
 			signal.Signal2D{{3, 5, 4, 8}},
-			signal.Signal2D{{4, 1}, {0, 0}},
+			signal.Signal2D{
+				{3.4, 5.7, 4.5, 9.1},
+				{0.5, 0.9, 0.7, 1.5},
+				{0.7, 1.2, 0.9, 1.9},
+				{0.1, 0.2, 0.1, 0.3}},
 		},
 		{
 			2,
 			signal.Signal2D{{3, 5, 4, 8}},
-			signal.Signal2D{{4, 1}, {0, 0}},
+			signal.Signal2D{
+				{0.3, 0.5, 4.5, 9.1},
+				{-1.7, -2.8, 0.7, 1.5},
+				{0.7, 1.2, 0.9, 1.9},
+				{0.1, 0.2, 0.1, 0.3},
+			},
 		},
 	}
 
@@ -47,23 +56,23 @@ func TestInverseCDF97Transform(t *testing.T) {
 			1,
 			signal.Signal2D{{3, 5, 4, 8}},
 		},
-		// {
-		// 	2,
-		// 	signal.Signal2D{{3, 5, 4, 8}},
-		// },
-		// {
-		// 	1,
-		// 	signal.Signal2D{
-		// 		{64, 2, 3, 61, 60, 6, 7, 57},
-		// 		{9, 55, 54, 12, 13, 51, 50, 16},
-		// 		{17, 47, 46, 20, 21, 43, 42, 24},
-		// 		{40, 26, 27, 37, 36, 30, 31, 33},
-		// 		{32, 34, 35, 29, 28, 38, 39, 25},
-		// 		{41, 23, 22, 44, 45, 19, 18, 48},
-		// 		{49, 15, 14, 52, 53, 11, 10, 56},
-		// 		{8, 58, 59, 5, 4, 62, 63, 1},
-		// 	},
-		// },
+		{
+			2,
+			signal.Signal2D{{3, 5, 4, 8}},
+		},
+		{
+			1,
+			signal.Signal2D{
+				{64, 2, 3, 61, 60, 6, 7, 57},
+				{9, 55, 54, 12, 13, 51, 50, 16},
+				{17, 47, 46, 20, 21, 43, 42, 24},
+				{40, 26, 27, 37, 36, 30, 31, 33},
+				{32, 34, 35, 29, 28, 38, 39, 25},
+				{41, 23, 22, 44, 45, 19, 18, 48},
+				{49, 15, 14, 52, 53, 11, 10, 56},
+				{8, 58, 59, 5, 4, 62, 63, 1},
+			},
+		},
 	}
 
 	for i, tt := range tests {
@@ -71,7 +80,7 @@ func TestInverseCDF97Transform(t *testing.T) {
 			w := &CDF97Wavelet{Level: tt.level}
 			ts := w.Transform(tt.signal)
 			recon := w.InverseTransform(ts)
-			// recon = recon.Slice(0, 0, tt.signal.Bounds().Max.X, tt.signal.Bounds().Max.Y)
+			recon = recon.Slice(0, 0, tt.signal.Bounds().Max.X, tt.signal.Bounds().Max.Y)
 			if !recon.Equal(tt.signal) {
 				reconStr := recon.String(recon.Bounds())
 				expStr := tt.signal.String(tt.signal.Bounds())
@@ -97,6 +106,9 @@ func TestInverseCDF97Transform1(t *testing.T) {
 	ts := w.Transform(s)
 	recon := w.InverseTransform(ts)
 
-	t.Errorf("\n%s", ts.String(ts.Bounds()))
-	t.Errorf("\n%s", recon.String(recon.Bounds()))
+	if !recon.Equal(s) {
+		reconStr := recon.String(recon.Bounds())
+		expStr := s.String(s.Bounds())
+		t.Errorf("Reconstructed signal was incorrect, got:\n%s\nwant:\n%s", reconStr, expStr)
+	}
 }

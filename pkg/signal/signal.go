@@ -73,7 +73,7 @@ func (s Signal2D) Image() image.Image {
 	return img
 }
 
-const epsilon = 0.0001
+var epsilon = 0.05
 
 func (s Signal2D) Equal(s2 Signal2D) bool {
 	w1, h1 := s.Size()

@@ -21,6 +21,11 @@ func getPowerOf2Size2(s signal.Signal2D, level int) (int, int) {
 	if M != (M>>level)<<level {
 		M = (M>>level + 1) << level
 	}
+	if N > M {
+		M = N
+	} else {
+		N = M
+	}
 	return N, M
 }
 
@@ -28,7 +33,7 @@ func (cdf *CDF97Wavelet) Transform(s signal.Signal2D) signal.Signal2D {
 	width, height := getPowerOf2Size2(s, cdf.Level)
 	// width, height := s.Size()
 	result := s.Clone()
-	result = result.Pad(width, height, signal.PadZero)
+	result = result.Pad(width, height, signal.PadSymmetric)
 
 	for level := 0; level < cdf.Level; level++ {
 		// Cols
@@ -99,7 +104,7 @@ func (cdf *CDF97Wavelet) Decompose(s signal.Signal2D, width, height int) signal.
 	}
 
 	// De-interleave
-	tempBank := signal.New(width, height)
+	tempBank := signal.New(height, width)
 	for y := 0; y < height; y++ {
 		for x := 0; x < width; x++ {
 			// k1 and k2 scale the vals

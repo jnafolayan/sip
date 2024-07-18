@@ -11,6 +11,7 @@ import (
 
 	"github.com/jnafolayan/sip/internal/cli"
 	"github.com/jnafolayan/sip/internal/imageutils"
+	"github.com/jnafolayan/sip/pkg/cdf97"
 	"github.com/jnafolayan/sip/pkg/haar"
 	"github.com/jnafolayan/sip/pkg/signal"
 	"github.com/jnafolayan/sip/pkg/wavelet"
@@ -49,6 +50,8 @@ var compressCmd = &cli.Command{
 		switch compressFlags.waveletType {
 		case "haar":
 			w = &haar.HaarWavelet{Level: compressFlags.level}
+		case "cdf97":
+			w = &cdf97.CDF97Wavelet{Level: compressFlags.level}
 		default:
 			return fmt.Errorf("unrecognized wavelet: %s", compressFlags.waveletType)
 		}

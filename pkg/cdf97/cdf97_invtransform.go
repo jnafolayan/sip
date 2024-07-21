@@ -33,14 +33,14 @@ func (cdf *CDF97Wavelet) InverseTransform(s signal.Signal2D) signal.Signal2D {
 func (cdf *CDF97Wavelet) Reconstruct(s signal.Signal2D, width, height int) signal.Signal2D {
 	// 9/7 inverse coefficients:
 	var (
-		a1 float32 = 1.586134342
-		a2 float32 = 0.05298011854
-		a3 float32 = -0.8829110762
-		a4 float32 = -0.4435068522
+		a1 signal.SignalCoeff = 1.586134342
+		a2 signal.SignalCoeff = 0.05298011854
+		a3 signal.SignalCoeff = -0.8829110762
+		a4 signal.SignalCoeff = -0.4435068522
 
 		// Inverse scale coeffs:
-		k1 float32 = 1.230174104914
-		k2 float32 = 1.6257861322319229
+		k1 signal.SignalCoeff = 1.230174104914
+		k2 signal.SignalCoeff = 1.6257861322319229
 	)
 
 	// if width < 2 || height < 2 {

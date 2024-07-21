@@ -4,10 +4,13 @@ import (
 	"image"
 	"image/color"
 	"image/jpeg"
-	_ "image/jpeg"
 	_ "image/png"
 	"os"
+
+	"github.com/jnafolayan/sip/pkg/signal"
 )
+
+type SignalCoeff = signal.SignalCoeff
 
 func ReadImage(fpath string) (image.Image, error) {
 	f, err := os.Open(fpath)
@@ -33,20 +36,20 @@ func SaveImage(fpath string, img image.Image) error {
 	return jpeg.Encode(f, img, nil)
 }
 
-func Grayscale(img image.Image) [][]float32 {
+func Grayscale(img image.Image) [][]SignalCoeff {
 	size := img.Bounds().Size()
-	grayscale := make([][]float32, size.Y)
+	grayscale := make([][]SignalCoeff, size.Y)
 
 	for i := 0; i < size.Y; i++ {
-		grayscale[i] = make([]float32, size.X)
+		grayscale[i] = make([]SignalCoeff, size.X)
 		for j := 0; j < size.X; j++ {
 			r, g, b, _ := img.At(j, i).RGBA()
-			r1 := float32(r >> 8)
-			g1 := float32(g >> 8)
-			b1 := float32(b >> 8)
+			r1 := SignalCoeff(r >> 8)
+			g1 := SignalCoeff(g >> 8)
+			b1 := SignalCoeff(b >> 8)
 			grayscale[i][j] = (r1 + g1 + b1) / 3.0
 			// y, _, _ := color.RGBToYCbCr(r1, g1, b1)
-			// grayscale[i][j] = float32(y)
+			// grayscale[i][j] = SignalCoeff(y)
 		}
 	}
 
@@ -72,18 +75,18 @@ func YCbCr(img image.Image) [][]color.YCbCr {
 	return pixelData
 }
 
-func ExtractYCbCrComponents(pixels [][]color.YCbCr) ([][]float32, [][]float32, [][]float32) {
-	Y := make([][]float32, len(pixels))
-	Cb := make([][]float32, len(pixels))
-	Cr := make([][]float32, len(pixels))
+func ExtractYCbCrComponents(pixels [][]color.YCbCr) ([][]SignalCoeff, [][]SignalCoeff, [][]SignalCoeff) {
+	Y := make([][]SignalCoeff, len(pixels))
+	Cb := make([][]SignalCoeff, len(pixels))
+	Cr := make([][]SignalCoeff, len(pixels))
 	for i := 0; i < len(pixels); i++ {
-		Y[i] = make([]float32, len(pixels[i]))
-		Cb[i] = make([]float32, len(pixels[i]))
-		Cr[i] = make([]float32, len(pixels[i]))
+		Y[i] = make([]SignalCoeff, len(pixels[i]))
+		Cb[i] = make([]SignalCoeff, len(pixels[i]))
+		Cr[i] = make([]SignalCoeff, len(pixels[i]))
 		for j := 0; j < len(pixels[i]); j++ {
-			Y[i][j] = float32(pixels[i][j].Y)
-			Cb[i][j] = float32(pixels[i][j].Cb)
-			Cr[i][j] = float32(pixels[i][j].Cr)
+			Y[i][j] = SignalCoeff(pixels[i][j].Y)
+			Cb[i][j] = SignalCoeff(pixels[i][j].Cb)
+			Cr[i][j] = SignalCoeff(pixels[i][j].Cr)
 		}
 	}
 

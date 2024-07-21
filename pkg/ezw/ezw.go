@@ -9,5 +9,6 @@ type Zerotree struct {
 
 func CreateTree(s signal.Signal2D, level int) *Zerotree {
 	root := &Zerotree{}
+
 	return root
 }

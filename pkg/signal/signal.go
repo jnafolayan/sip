@@ -9,12 +9,14 @@ import (
 	"strings"
 )
 
-type Signal2D [][]float32
+type SignalCoeff = float64
+
+type Signal2D [][]SignalCoeff
 
 func New(width, height int) Signal2D {
 	s := make(Signal2D, height)
 	for i := 0; i < height; i++ {
-		s[i] = make([]float32, width)
+		s[i] = make([]SignalCoeff, width)
 	}
 	return s
 }
@@ -116,7 +118,7 @@ func (s Signal2D) Pad(width, height int, padStyle PadStyle) Signal2D {
 	result := New(width, height)
 
 	// Copy existing signal
-	var v float32
+	var v SignalCoeff
 	for i := 0; i < oldHeight; i++ {
 		copy(result[i], s[i])
 		// Fill new columns using the pad style specified
@@ -168,7 +170,7 @@ func (s Signal2D) SoftThreshold(offsetX, offsetY, threshold int) Signal2D {
 			if abs < thresh {
 				result[i][j] = 0
 			} else {
-				result[i][j] = float32(math.Copysign(abs-thresh, float64(s[i][j])))
+				result[i][j] = SignalCoeff(math.Copysign(abs-thresh, float64(s[i][j])))
 			}
 		}
 	}

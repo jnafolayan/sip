@@ -44,7 +44,9 @@ var compressCmd = &cli.Command{
 		}
 
 		// Parse flags
-		cmd.FlagSet.Parse(args[1:])
+		if err := cmd.FlagSet.Parse(args[1:]); err != nil {
+			return err
+		}
 
 		var w wavelet.Wavelet
 		switch compressFlags.waveletType {
@@ -68,7 +70,7 @@ var compressCmd = &cli.Command{
 		tCb = w.HardThreshold(tCb, threshold)
 		tCr = w.HardThreshold(tCr, threshold)
 
-		transformedImage := createImageFromYCbCr(tY, tCb, tCr)
+		// transformedImage := createImageFromYCbCr(tY, tCb, tCr)
 		outY, outCb, outCr := inverseTransformYCbCr(w, tY, tCb, tCr)
 
 		// Remove artifacts caused by padding image
@@ -90,7 +92,7 @@ var compressCmd = &cli.Command{
 			return err
 		}
 		outFile := filepath.Join(wd, compressFlags.outputFile)
-		err = imageutils.SaveImage(outFile, transformedImage)
+		err = imageutils.SaveImage(outFile, output)
 		if err != nil {
 			return err
 		}

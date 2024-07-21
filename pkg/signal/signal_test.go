@@ -1,6 +1,9 @@
 package signal
 
-import "testing"
+import (
+	"fmt"
+	"testing"
+)
 
 func TestSignalClone(t *testing.T) {
 	s := createDummySignal()
@@ -8,6 +11,20 @@ func TestSignalClone(t *testing.T) {
 	if s[0][0] != sClone[0][0] || s[0][1] != sClone[0][1] ||
 		s[1][0] != sClone[1][0] || s[1][1] != sClone[1][1] {
 		t.Fatal("Cloned signal did not equal original")
+	}
+}
+
+func TestSignalFlatten(t *testing.T) {
+	s := Signal2D{
+		{1, 2, 3},
+		{4, 5, 6},
+		{0, 8, 5},
+	}
+	oneD := s.Flatten()
+	str := fmt.Sprintf("%v", oneD)
+	expected := "[1 2 3 4 5 6 0 8 5]"
+	if str != expected {
+		t.Fatalf("Flattened signal incorrect, got: %s, want: %s.", str, expected)
 	}
 }
 

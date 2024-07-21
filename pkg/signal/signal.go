@@ -37,6 +37,16 @@ func (s Signal2D) Clone() Signal2D {
 	return result
 }
 
+// Clone returns a deep clone of the signal
+func (s Signal2D) Flatten() []SignalCoeff {
+	w, h := s.Size()
+	result := make([]SignalCoeff, w*h)
+	for i := range result {
+		result[i] = s[i/w][i%w]
+	}
+	return result
+}
+
 // String produces a string representation of the signal
 func (s Signal2D) String(bounds image.Rectangle) string {
 	var out strings.Builder

@@ -61,17 +61,14 @@ var compressCmd = &cli.Command{
 
 		// Transform channels
 		tY, tCb, tCr := transformYCbCr(w, Y, Cb, Cr)
-		tWidth, tHeight := tY.Size()
 
 		// Threshold channels
-		offsetX := tWidth / (1 << compressFlags.level)
-		offsetY := tHeight / (1 << compressFlags.level)
 		threshold := compressFlags.threshold
-		tY = tY.HardThreshold(offsetX, offsetY, threshold)
-		tCb = tCb.HardThreshold(offsetX, offsetY, threshold)
-		tCr = tCr.HardThreshold(offsetX, offsetY, threshold)
+		tY = w.HardThreshold(tY, threshold)
+		tCb = w.HardThreshold(tCb, threshold)
+		tCr = w.HardThreshold(tCr, threshold)
 
-		// transformedImage := createImageFromYCbCr(tY, tCb, tCr)
+		transformedImage := createImageFromYCbCr(tY, tCb, tCr)
 		outY, outCb, outCr := inverseTransformYCbCr(w, tY, tCb, tCr)
 
 		// Remove artifacts caused by padding image
@@ -93,7 +90,7 @@ var compressCmd = &cli.Command{
 			return err
 		}
 		outFile := filepath.Join(wd, compressFlags.outputFile)
-		err = imageutils.SaveImage(outFile, output)
+		err = imageutils.SaveImage(outFile, transformedImage)
 		if err != nil {
 			return err
 		}

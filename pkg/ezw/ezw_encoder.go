@@ -24,6 +24,10 @@ const (
 	SymbolNG              // Negative significant
 	SymbolZR              // Zerotree root
 	SymbolIZ              // Isolated zero
+
+	// Used in the refinement pass
+	SymbolLow
+	SymbolHigh
 )
 
 type Encoder struct {
@@ -64,9 +68,16 @@ func (e *Encoder) write(coeff SignificantCoeff) {
 	e.output = append(e.output, coeff)
 }
 
+func (e *Encoder) Next() {
+	e.SignificancePass()
+	e.RefinementPass()
+	e.threshold /= 2
+}
+
 func (e *Encoder) SignificancePass() {
 	markedForDeletion := make([]int, 0, 2)
 	T := float64(e.threshold)
+
 	for coeffIndex, coeff := range e.dominantList {
 		sCoeff := SignificantCoeff{
 			FlatSignalCoeff: coeff,
@@ -78,6 +89,7 @@ func (e *Encoder) SignificancePass() {
 			} else {
 				sCoeff.Symbol = SymbolNG
 			}
+			e.write(sCoeff)
 			e.subordinateList = append(e.subordinateList, sCoeff)
 			markedForDeletion = append(markedForDeletion, coeffIndex)
 		} else {
@@ -101,7 +113,20 @@ func (e *Encoder) SignificancePass() {
 }
 
 func (e *Encoder) RefinementPass() {
-
+	var abs signal.SignalCoeff
+	T := float64(e.threshold)
+	upperT := T * 2
+	midT := T + (upperT-T)/2
+	for _, coeff := range e.subordinateList {
+		abs = math.Abs(coeff.Value)
+		if abs >= T && abs < midT {
+			coeff.Symbol = SymbolLow
+			e.write(coeff)
+		} else if abs >= midT && abs <= upperT {
+			coeff.Symbol = SymbolHigh
+			e.write(coeff)
+		}
+	}
 }
 
 func (e *Encoder) checkIsZerotree(coeff FlatSignalCoeff) bool {

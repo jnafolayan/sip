@@ -65,8 +65,9 @@ func (e *Encoder) write(coeff SignificantCoeff) {
 }
 
 func (e *Encoder) SignificancePass() {
+	markedForDeletion := make([]int, 0, 2)
 	T := float64(e.threshold)
-	for _, coeff := range e.dominantList {
+	for coeffIndex, coeff := range e.dominantList {
 		sCoeff := SignificantCoeff{
 			FlatSignalCoeff: coeff,
 			Symbol:          SymbolNone,
@@ -78,6 +79,7 @@ func (e *Encoder) SignificancePass() {
 				sCoeff.Symbol = SymbolNG
 			}
 			e.subordinateList = append(e.subordinateList, sCoeff)
+			markedForDeletion = append(markedForDeletion, coeffIndex)
 		} else {
 			if e.checkIsZerotreeDescendant(coeff) {
 				// Don't code - it is "predictably insignificant"
@@ -91,6 +93,15 @@ func (e *Encoder) SignificancePass() {
 			}
 		}
 	}
+
+	// Delete coeffs that were added to the subordinate list
+	for _, idx := range markedForDeletion {
+		e.dominantList = append(e.dominantList[:idx], e.dominantList[idx+1:]...)
+	}
+}
+
+func (e *Encoder) RefinementPass() {
+
 }
 
 func (e *Encoder) checkIsZerotree(coeff FlatSignalCoeff) bool {
@@ -175,6 +186,7 @@ func (e *Encoder) flattenSource() []FlatSignalCoeff {
 	return result
 }
 
+// flattenQuadrant flattens the 2D slice into a 1D slice
 func (e *Encoder) flattenQuadrant(q []int) []FlatSignalCoeff {
 	endRow := q[1] + q[3]
 	endCol := q[0] + q[2]

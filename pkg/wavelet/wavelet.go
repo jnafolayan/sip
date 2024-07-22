@@ -9,3 +9,10 @@ type Wavelet interface {
 	HardThreshold(signal signal.Signal2D, threshold int) signal.Signal2D
 	SoftThreshold(signal signal.Signal2D, threshold int) signal.Signal2D
 }
+
+type WaveletType string
+
+var (
+	WaveletHaar  WaveletType = "haar"
+	WaveletCDF97 WaveletType = "cdf97"
+)

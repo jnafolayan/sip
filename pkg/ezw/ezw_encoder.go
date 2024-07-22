@@ -1,9 +1,17 @@
 package ezw
 
 import (
+	"bytes"
+	"encoding/binary"
+	"errors"
+	"fmt"
+	"io"
 	"math"
 
+	"github.com/jnafolayan/sip/pkg/cdf97"
+	"github.com/jnafolayan/sip/pkg/haar"
 	"github.com/jnafolayan/sip/pkg/signal"
+	"github.com/jnafolayan/sip/pkg/wavelet"
 )
 
 type FlatSignalCoeff struct {
@@ -30,13 +38,68 @@ const (
 	SymbolHigh
 )
 
+var SymbolCodes = map[SymbolType]uint8{
+	SymbolZR:   0b0,
+	SymbolPS:   0b10,
+	SymbolLow:  0b110,
+	SymbolNG:   0b1110,
+	SymbolHigh: 0b11110,
+	SymbolIZ:   0b11111,
+}
+
 type Encoder struct {
 	signal          signal.Signal2D
 	dominantList    []FlatSignalCoeff
 	subordinateList []SignificantCoeff
 	threshold       int
 	level           int
-	output          []SignificantCoeff
+	output          *bytes.Buffer
+}
+
+type EncoderOptions struct {
+	Wavelet            wavelet.WaveletType
+	ThresholdingFactor int
+	DecompositionLevel int
+	MaxPasses          int
+}
+
+var DefaultEncoderOpts = EncoderOptions{
+	Wavelet:            wavelet.WaveletHaar,
+	ThresholdingFactor: 50,
+	DecompositionLevel: 1,
+}
+
+func NewEncoder() *Encoder {
+	return &Encoder{}
+}
+
+// Init prepares the encoder for subsequent EZW coding passes
+func (e *Encoder) Init(s signal.Signal2D, opts EncoderOptions) error {
+	// Get wavelet family
+	var w wavelet.Wavelet
+	switch opts.Wavelet {
+	case "haar":
+		w = &haar.HaarWavelet{Level: opts.DecompositionLevel}
+	case "cdf97":
+		w = &cdf97.CDF97Wavelet{Level: opts.DecompositionLevel}
+	default:
+		return fmt.Errorf("unrecognized wavelet: %s", opts.Wavelet)
+	}
+
+	// Transform
+	coeffs := w.Transform(s)
+	// Threshold
+	coeffs = w.HardThreshold(coeffs, opts.ThresholdingFactor)
+
+	width, height := coeffs.Size()
+	e.signal = coeffs
+	e.level = opts.DecompositionLevel
+	e.dominantList = e.flattenSource()
+	e.subordinateList = make([]SignificantCoeff, 0, width*height)
+	e.output = new(bytes.Buffer)
+	e.threshold = int(math.Pow(2, math.Floor(math.Log2(findMaxCoeff(s)))))
+
+	return nil
 }
 
 func findMaxCoeff(s signal.Signal2D) signal.SignalCoeff {
@@ -53,25 +116,48 @@ func findMaxCoeff(s signal.Signal2D) signal.SignalCoeff {
 	return maxCoeff
 }
 
-// Init prepares the encoder for subsequent EZW coding passes
-func (e *Encoder) Init(s signal.Signal2D, level int) {
-	w, h := s.Size()
-	e.signal = s
-	e.level = level
-	e.dominantList = e.flattenSource()
-	e.subordinateList = make([]SignificantCoeff, 0, w*h)
-	e.output = make([]SignificantCoeff, 0, w*h)
-	e.threshold = int(math.Pow(2, math.Floor(math.Log2(findMaxCoeff(s)))))
-}
-
 func (e *Encoder) write(coeff SignificantCoeff) {
-	e.output = append(e.output, coeff)
+	e.output.Write(e.encodeCoefficient(coeff))
 }
 
-func (e *Encoder) Next() {
+func (e *Encoder) encodeCoefficient(coeff SignificantCoeff) []byte {
+	buf := new(bytes.Buffer)
+
+	// Encode symbol
+	symbolBits := SymbolCodes[coeff.Symbol]
+	buf.WriteByte(symbolBits)
+
+	// Encode row and col indices
+	rowBits := uint16(coeff.Row)
+	colBits := uint16(coeff.Col)
+	binary.Write(buf, binary.BigEndian, rowBits)
+	binary.Write(buf, binary.BigEndian, colBits)
+
+	// Encode the value
+	valueBits := float64(coeff.Value)
+	binary.Write(buf, binary.BigEndian, valueBits)
+
+	return buf.Bytes()
+}
+
+// Flush writes the current output and clears the output buffer.
+func (e *Encoder) Flush(w io.Writer) {
+	w.Write(e.output.Bytes())
+	e.output.Reset()
+}
+
+var ErrStopped = errors.New("stopped encoding")
+
+func (e *Encoder) Next() error {
+	if e.threshold <= 0 {
+		return ErrStopped
+	}
+
 	e.SignificancePass()
 	e.RefinementPass()
 	e.threshold /= 2
+
+	return nil
 }
 
 func (e *Encoder) SignificancePass() {

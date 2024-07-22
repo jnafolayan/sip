@@ -1,6 +1,7 @@
 package ezw
 
 import (
+	"bytes"
 	"fmt"
 	"slices"
 	"testing"
@@ -14,8 +15,9 @@ func TestGetQuadrants(t *testing.T) {
 		{5, 6, 7, 8},
 	}
 
-	e := &Encoder{}
-	e.Init(s, 1)
+	e := NewEncoder()
+	e.Init(s, DefaultEncoderOpts)
+	e.signal = s
 	ll, hl, lh, hh := e.getQuadrantsForLevel(1)
 	if !slices.Equal(ll, []int{0, 0, 2, 1}) {
 		t.Errorf("Expected ll=%v, got=%v\n.", []int{0, 0, 2, 1}, ll)
@@ -37,8 +39,9 @@ func TestFlattenSource(t *testing.T) {
 		{3, 4, 7, 8},
 	}
 
-	e := &Encoder{}
-	e.Init(s, 1)
+	e := NewEncoder()
+	e.Init(s, DefaultEncoderOpts)
+	e.signal = s
 	expected := []FlatSignalCoeff{
 		{0, 0, 1},
 		{0, 1, 2},
@@ -65,8 +68,9 @@ func TestIsZerotree(t *testing.T) {
 		{6, 17, 5, -19, 2, 0, -3, 1},
 		{32, 26, -7, 5, -1, -5, 7, 4},
 	}
-	e := &Encoder{}
-	e.Init(s, 3)
+	e := NewEncoder()
+	e.Init(s, DefaultEncoderOpts)
+	e.signal = s
 
 	tests := []struct {
 		row      int
@@ -105,8 +109,9 @@ func TestIsZerotreeDescendant(t *testing.T) {
 		{6, 17, 5, -19, 2, 0, -3, 1},
 		{32, 26, -7, 5, -1, -5, 7, 4},
 	}
-	e := &Encoder{}
-	e.Init(s, 3)
+	e := NewEncoder()
+	e.Init(s, DefaultEncoderOpts)
+	e.signal = s
 
 	tests := []struct {
 		row      int
@@ -137,4 +142,31 @@ func TestIsZerotreeDescendant(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestEncoder(t *testing.T) {
+	s := signal.Signal2D{
+		{127, 69, 24, 73, 13, 5, -8, 5},
+		{-37, -18, -18, 8, -6, 7, 15, 4},
+		{44, -87, -15, 21, 8, -11, 14, -3},
+		{65, 18, 29, -56, 0, -2, 3, 7},
+		{34, 38, -18, 17, 3, -9, -2, 1},
+		{-27, -41, 11, -5, 0, -1, 0, -3},
+		{6, 17, 5, -19, 2, 0, -3, 1},
+		{32, 26, -7, 5, -1, -5, 7, 4},
+	}
+	e := NewEncoder()
+	e.Init(s, DefaultEncoderOpts)
+	e.signal = s
+	e.Next()
+
+	var out bytes.Buffer
+	e.Flush(&out)
+	t.Errorf("%v\n", out.String())
+	e.Next()
+	e.Flush(&out)
+	t.Errorf("%v\n", out.String())
+	e.Next()
+	e.Flush(&out)
+	t.Errorf("%v\n", out.String())
 }

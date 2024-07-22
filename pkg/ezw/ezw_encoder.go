@@ -6,14 +6,14 @@ import (
 	"github.com/jnafolayan/sip/pkg/signal"
 )
 
-type SignificantCoeff struct {
-	FlatSignalCoeff
-	Symbol SymbolType
-}
-
 type FlatSignalCoeff struct {
 	Row, Col int
 	Value    signal.SignalCoeff
+}
+
+type SignificantCoeff struct {
+	FlatSignalCoeff
+	Symbol SymbolType
 }
 
 type SymbolType int
@@ -32,6 +32,7 @@ type Encoder struct {
 	subordinateList []SignificantCoeff
 	threshold       int
 	level           int
+	output          []SignificantCoeff
 }
 
 func findMaxCoeff(s signal.Signal2D) signal.SignalCoeff {
@@ -54,15 +55,102 @@ func (e *Encoder) Init(s signal.Signal2D, level int) {
 	e.signal = s
 	e.level = level
 	e.dominantList = e.flattenSource()
-	e.subordinateList = make([]SignificantCoeff, w*h)
+	e.subordinateList = make([]SignificantCoeff, 0, w*h)
+	e.output = make([]SignificantCoeff, 0, w*h)
 	e.threshold = int(math.Pow(2, math.Floor(math.Log2(findMaxCoeff(s)))))
 }
 
+func (e *Encoder) write(coeff SignificantCoeff) {
+	e.output = append(e.output, coeff)
+}
+
 func (e *Encoder) SignificancePass() {
-	l := e.level
-	for l >= 1 {
-		l--
+	T := float64(e.threshold)
+	for _, coeff := range e.dominantList {
+		sCoeff := SignificantCoeff{
+			FlatSignalCoeff: coeff,
+			Symbol:          SymbolNone,
+		}
+		if math.Abs(coeff.Value) >= T {
+			if coeff.Value >= 0 {
+				sCoeff.Symbol = SymbolPS
+			} else {
+				sCoeff.Symbol = SymbolNG
+			}
+			e.subordinateList = append(e.subordinateList, sCoeff)
+		} else {
+			if e.checkIsZerotreeDescendant(coeff) {
+				// Don't code - it is "predictably insignificant"
+				continue
+			} else if e.checkIsZerotree(coeff) {
+				sCoeff.Symbol = SymbolZR
+				e.write(sCoeff)
+			} else {
+				// Coeff is an isolated zerotree
+				sCoeff.Symbol = SymbolIZ
+			}
+		}
 	}
+}
+
+func (e *Encoder) checkIsZerotree(coeff FlatSignalCoeff) bool {
+	w, h := e.signal.Size()
+	row, col := coeff.Row, coeff.Col
+
+	if e.signal[row][col] >= float64(e.threshold) {
+		return false
+	}
+
+	if row == 0 && col == 0 {
+		// FIXME: should handle this edge case better
+		return e.signal[0][0] == 0
+	}
+
+	for {
+		row *= 2
+		col *= 2
+		if row >= h || col >= w {
+			break
+		}
+
+		for y := row; y < row+2; y++ {
+			for x := col; x < col+2; x++ {
+				if math.Abs(e.signal[y][x]) >= float64(e.threshold) {
+					return false
+				}
+			}
+		}
+	}
+
+	return true
+}
+
+func (e *Encoder) checkIsZerotreeDescendant(coeff FlatSignalCoeff) bool {
+	width, height := e.signal.Size()
+	row, col := coeff.Row, coeff.Col
+
+	llWidth := (width / (1 << e.level))
+	llHeight := (height / (1 << e.level))
+
+	// Return false if coeff is in LL (is a root)
+	if row < llHeight && col < llWidth {
+		return false
+	}
+
+	for {
+		row /= 2
+		col /= 2
+		if math.Abs(e.signal[row][col]) < float64(e.threshold) {
+			return true
+		}
+
+		if row < llHeight && col < llWidth {
+			// Break when we reach the LL subband. We can't search further.
+			break
+		}
+	}
+
+	return false
 }
 
 // flattenSource generates a list containing coefficients by scanning the source

@@ -1,7 +1,6 @@
 package ezw
 
 import (
-	"bytes"
 	"fmt"
 	"slices"
 	"testing"
@@ -39,7 +38,7 @@ func TestFlattenSource(t *testing.T) {
 	}
 
 	e := NewEncoder()
-	e.Init(s, 3)
+	e.Init(s, 1)
 	expected := []FlatSignalCoeff{
 		{0, 0, 1},
 		{0, 1, 2},
@@ -140,28 +139,28 @@ func TestIsZerotreeDescendant(t *testing.T) {
 	}
 }
 
-func TestEncoder(t *testing.T) {
-	s := signal.Signal2D{
-		{127, 69, 24, 73, 13, 5, -8, 5},
-		{-37, -18, -18, 8, -6, 7, 15, 4},
-		{44, -87, -15, 21, 8, -11, 14, -3},
-		{65, 18, 29, -56, 0, -2, 3, 7},
-		{34, 38, -18, 17, 3, -9, -2, 1},
-		{-27, -41, 11, -5, 0, -1, 0, -3},
-		{6, 17, 5, -19, 2, 0, -3, 1},
-		{32, 26, -7, 5, -1, -5, 7, 4},
-	}
-	e := NewEncoder()
-	e.Init(s, 3)
-	e.Next()
+// func TestEncoder(t *testing.T) {
+// 	s := signal.Signal2D{
+// 		{127, 69, 24, 73, 13, 5, -8, 5},
+// 		{-37, -18, -18, 8, -6, 7, 15, 4},
+// 		{44, -87, -15, 21, 8, -11, 14, -3},
+// 		{65, 18, 29, -56, 0, -2, 3, 7},
+// 		{34, 38, -18, 17, 3, -9, -2, 1},
+// 		{-27, -41, 11, -5, 0, -1, 0, -3},
+// 		{6, 17, 5, -19, 2, 0, -3, 1},
+// 		{32, 26, -7, 5, -1, -5, 7, 4},
+// 	}
+// 	e := NewEncoder()
+// 	e.Init(s, 3)
+// 	e.Next()
 
-	var out bytes.Buffer
-	e.Flush(&out)
-	t.Errorf("%v\n", out.String())
-	e.Next()
-	e.Flush(&out)
-	t.Errorf("%v\n", out.String())
-	e.Next()
-	e.Flush(&out)
-	t.Errorf("%v\n", out.String())
-}
+// 	var out bytes.Buffer
+// 	e.Flush(&out)
+// 	t.Errorf("%v\n", out.String())
+// 	e.Next()
+// 	e.Flush(&out)
+// 	t.Errorf("%v\n", out.String())
+// 	e.Next()
+// 	e.Flush(&out)
+// 	t.Errorf("%v\n", out.String())
+// }

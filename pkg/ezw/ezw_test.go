@@ -16,8 +16,7 @@ func TestGetQuadrants(t *testing.T) {
 	}
 
 	e := NewEncoder()
-	e.Init(s, DefaultEncoderOpts)
-	e.signal = s
+	e.Init(s, 3)
 	ll, hl, lh, hh := e.getQuadrantsForLevel(1)
 	if !slices.Equal(ll, []int{0, 0, 2, 1}) {
 		t.Errorf("Expected ll=%v, got=%v\n.", []int{0, 0, 2, 1}, ll)
@@ -40,8 +39,7 @@ func TestFlattenSource(t *testing.T) {
 	}
 
 	e := NewEncoder()
-	e.Init(s, DefaultEncoderOpts)
-	e.signal = s
+	e.Init(s, 3)
 	expected := []FlatSignalCoeff{
 		{0, 0, 1},
 		{0, 1, 2},
@@ -69,8 +67,7 @@ func TestIsZerotree(t *testing.T) {
 		{32, 26, -7, 5, -1, -5, 7, 4},
 	}
 	e := NewEncoder()
-	e.Init(s, DefaultEncoderOpts)
-	e.signal = s
+	e.Init(s, 3)
 
 	tests := []struct {
 		row      int
@@ -110,8 +107,7 @@ func TestIsZerotreeDescendant(t *testing.T) {
 		{32, 26, -7, 5, -1, -5, 7, 4},
 	}
 	e := NewEncoder()
-	e.Init(s, DefaultEncoderOpts)
-	e.signal = s
+	e.Init(s, 3)
 
 	tests := []struct {
 		row      int
@@ -156,8 +152,7 @@ func TestEncoder(t *testing.T) {
 		{32, 26, -7, 5, -1, -5, 7, 4},
 	}
 	e := NewEncoder()
-	e.Init(s, DefaultEncoderOpts)
-	e.signal = s
+	e.Init(s, 3)
 	e.Next()
 
 	var out bytes.Buffer

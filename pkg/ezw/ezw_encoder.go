@@ -4,14 +4,10 @@ import (
 	"bytes"
 	"encoding/binary"
 	"errors"
-	"fmt"
 	"io"
 	"math"
 
-	"github.com/jnafolayan/sip/pkg/cdf97"
-	"github.com/jnafolayan/sip/pkg/haar"
 	"github.com/jnafolayan/sip/pkg/signal"
-	"github.com/jnafolayan/sip/pkg/wavelet"
 )
 
 type FlatSignalCoeff struct {
@@ -24,29 +20,6 @@ type SignificantCoeff struct {
 	Symbol SymbolType
 }
 
-type SymbolType int
-
-const (
-	SymbolNone SymbolType = iota
-	SymbolPS              // Positive siginificant
-	SymbolNG              // Negative significant
-	SymbolZR              // Zerotree root
-	SymbolIZ              // Isolated zero
-
-	// Used in the refinement pass
-	SymbolLow
-	SymbolHigh
-)
-
-var SymbolCodes = map[SymbolType]uint8{
-	SymbolZR:   0b0,
-	SymbolPS:   0b10,
-	SymbolLow:  0b110,
-	SymbolNG:   0b1110,
-	SymbolHigh: 0b11110,
-	SymbolIZ:   0b11111,
-}
-
 type Encoder struct {
 	signal          signal.Signal2D
 	dominantList    []FlatSignalCoeff
@@ -56,48 +29,19 @@ type Encoder struct {
 	output          *bytes.Buffer
 }
 
-type EncoderOptions struct {
-	Wavelet            wavelet.WaveletType
-	ThresholdingFactor int
-	DecompositionLevel int
-	MaxPasses          int
-}
-
-var DefaultEncoderOpts = EncoderOptions{
-	Wavelet:            wavelet.WaveletHaar,
-	ThresholdingFactor: 50,
-	DecompositionLevel: 1,
-}
-
 func NewEncoder() *Encoder {
 	return &Encoder{}
 }
 
 // Init prepares the encoder for subsequent EZW coding passes
-func (e *Encoder) Init(s signal.Signal2D, opts EncoderOptions) error {
-	// Get wavelet family
-	var w wavelet.Wavelet
-	switch opts.Wavelet {
-	case "haar":
-		w = &haar.HaarWavelet{Level: opts.DecompositionLevel}
-	case "cdf97":
-		w = &cdf97.CDF97Wavelet{Level: opts.DecompositionLevel}
-	default:
-		return fmt.Errorf("unrecognized wavelet: %s", opts.Wavelet)
-	}
-
-	// Transform
-	coeffs := w.Transform(s)
-	// Threshold
-	coeffs = w.HardThreshold(coeffs, opts.ThresholdingFactor)
-
+func (e *Encoder) Init(coeffs signal.Signal2D, decompLevel int) error {
 	width, height := coeffs.Size()
 	e.signal = coeffs
-	e.level = opts.DecompositionLevel
+	e.level = decompLevel
 	e.dominantList = e.flattenSource()
 	e.subordinateList = make([]SignificantCoeff, 0, width*height)
 	e.output = new(bytes.Buffer)
-	e.threshold = int(math.Pow(2, math.Floor(math.Log2(findMaxCoeff(s)))))
+	e.threshold = int(math.Pow(2, math.Floor(math.Log2(findMaxCoeff(coeffs)))))
 
 	return nil
 }

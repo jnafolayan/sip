@@ -16,16 +16,22 @@
                 <span class="header__tiny">image compression software</span>
             </header>
 
-            <main class="contain app">
-                <div class="upload">
-                    <label class="uploadBtn" for="imageUpload">
+            <main class="contain">
+                <div class="view__upload-area">
+                    <label class="upload-button" id="uploadButton" for="imageUpload">
                         <input id="imageUpload" type="file" accept="image/*" hidden />
                         Click to upload
                     </label>
+
+                    <p class="upload-progress hide" id="uploadProgress">0</p>
                 </div>
             </main>
         </div>
     </div>
+
+    <script src="files/uploadAnim.js"></script>
+    <script src="events.js"></script>
+    <script src="main.js"></script>
 </body>
 
 </html>

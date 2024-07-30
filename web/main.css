@@ -8,6 +8,7 @@
     --bg: #01060e;
     --text: #fff;
     --gray: #d3d3d3;
+    --yellow: #FFC300;
 }
 
 body {
@@ -31,6 +32,10 @@ body {
     padding: 10px 1.8rem;
 }
 
+.hide {
+    display: none !important;
+}
+
 .header {
     display: flex;
     align-items: baseline;
@@ -48,21 +53,35 @@ body {
     color: var(--gray);
 }
 
-.app {
-    background-color: transparent;
-}
-
-.upload {
+.view__upload-area {
     height: 500px;
-}
-
-.uploadBtn {
-    display: flex;
-    justify-content: center;
-    align-items: center;
     border: 4px dashed var(--gray);
     margin-top: 50px;
     border-radius: 5px;
-    height: 100%;
     font-size: 1.4rem;
+}
+
+.upload-button {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+}
+
+.upload-progress {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+    font-size: 1rem;
+    color: var(--gray);
+}
+
+.upload-progress span {
+    display: block;
+    font-size: 2rem;
+    color: var(--yellow);
+    font-weight: bold;
 }

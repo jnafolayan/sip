@@ -23,6 +23,7 @@ body {
     /* min-height: 100vh; */
     width: 100%;
     height: 100%;
+    position: relative;
 }
 
 .contain {
@@ -84,4 +85,25 @@ body {
     font-size: 2rem;
     color: var(--yellow);
     font-weight: bold;
+}
+
+.view__editor {
+    position: absolute;
+    width: 100vw;
+    height: 100vh;
+    background-color: transparent;
+}
+
+.editor__images {
+    width: 100%;
+    height: 100%;
+    position: relative;
+}
+
+.editor__images__original,
+.editor__images__compressed {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background-size: cover;
 }

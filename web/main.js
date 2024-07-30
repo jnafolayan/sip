@@ -1,11 +1,16 @@
 let uploadButton, fileInput, uploadProgress;
 
+// VIEWS
+let uploadView, editorView;
+let editorOriginalImage, editorCompressedImage;
+
 // EVENTS
 const [EventFileUploadStart, EventFileUploadProgress, EventFileUploadEnd] = [
     new AppEvent("FILE_UPLOAD_START"),
     new AppEvent("FILE_UPLOAD_PROGRESS"),
     new AppEvent("FILE_UPLOAD_END"),
 ];
+const EventEditorOpened = new AppEvent("EDITOR_OPENED");
 
 // STATE
 let userState;
@@ -16,6 +21,14 @@ function setup() {
     uploadButton = document.getElementById("uploadButton");
     uploadProgress = document.getElementById("uploadProgress");
     fileInput = document.getElementById("imageUpload");
+
+    uploadView = document.querySelector(".view__upload");
+    editorView = document.querySelector(".view__editor");
+
+    editorOriginalImage = document.querySelector(".editor__images__original");
+    editorCompressedImage = document.querySelector(
+        ".editor__images__compressed"
+    );
 
     userState = createUserState();
 
@@ -32,6 +45,16 @@ function subscribeToAppEvents() {
     EventFileUploadStart.subscribe(stepFileUploadAnimation);
     EventFileUploadProgress.subscribe(stepFileUploadAnimation);
     EventFileUploadEnd.subscribe(stepFileUploadAnimation);
+    EventFileUploadEnd.subscribe(() => {
+        setTimeout(() => {
+            uploadView.classList.add("hide");
+            editorView.classList.remove("hide");
+            EventEditorOpened.fire();
+        }, 500);
+    });
+
+    // View
+    EventEditorOpened.subscribe(setupEditor);
 }
 
 function handleImageUpload(evt) {
@@ -45,7 +68,7 @@ function handleImageUpload(evt) {
         userState.sourceImage = fr.result;
     };
     fr.onprogress = function (evt) {
-        EventFileUploadProgress.fire({ progress: evt.loaded / evt.total })
+        EventFileUploadProgress.fire({ progress: evt.loaded / evt.total });
     };
     EventFileUploadStart.fire({ progress: 0 });
     fr.readAsDataURL(file);

@@ -1,36 +1,51 @@
+const editorState = {
+    scale: 1,
+    panning: false,
+    pan: {
+        oldX: 0,
+        oldY: 0,
+        x: 0,
+        y: 0,
+    },
+};
+
+let editorRAF;
+
 function setupEditor() {
-    const {
-        source,
-        editor: { pan, rendering },
-    } = userState;
+    const { source } = appState;
 
     // dummy image
-    // const image = document.createElement("canvas");
-    // const ctx = image.getContext("2d");
-    // image.width = 300;
-    // image.height = 300;
-    // ctx.fillStyle = "#0f0";
-    // ctx.fillRect(0, 0, image.width, image.height);
-    // userState.source = {
+    // const dummy = createDummyImage();
+    // appState.source = {
     //     image,
     //     width: image.width,
     //     height: image.height,
     // };
 
-    pan.x = -source.width / 2;
-    pan.y = -source.height / 2;
-    userState.editor.scale = 1;
+    editorState.pan.x = -source.width / 2;
+    editorState.pan.y = -source.height / 2;
+    editorState.scale = 1;
 
-    rendering.raf = requestAnimationFrame(editorFrame);
+    editorRAF = requestAnimationFrame(editorFrame);
+}
+
+function createDummyImage() {
+    const image = document.createElement("canvas");
+    const ctx = image.getContext("2d");
+    image.width = 300;
+    image.height = 300;
+    ctx.fillStyle = "#0f0";
+    ctx.fillRect(0, 0, image.width, image.height);
+    return image;
 }
 
 function editorFrame() {
-    const { source, editor } = userState;
+    const { source } = appState;
     const {
         pan,
         scale,
-        rendering: { ctx },
-    } = editor;
+    } = editorState;
+    const ctx = editorCtx;
 
     ctx.clearRect(0, 0, editorCanvas.width, editorCanvas.height);
 
@@ -43,11 +58,11 @@ function editorFrame() {
     ctx.drawImage(source.image, 0, 0, source.width, source.height);
     ctx.restore();
 
-    editor.rendering.raf = requestAnimationFrame(editorFrame);
+    editorRAF = requestAnimationFrame(editorFrame);
 }
 
 function applyImageZoom({ pageX, pageY, scale, delta }) {
-    const { pan } = userState.editor;
+    const { pan } = editorState;
 
     const centerX = editorCanvas.width / 2;
     const centerY = editorCanvas.height / 2;

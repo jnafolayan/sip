@@ -2,7 +2,7 @@ let uploadButton, fileInput, uploadProgress;
 
 // VIEWS
 let uploadView, editorView;
-let editorCanvas;
+let editorCanvas, editorCtx;
 
 // EVENTS
 const [EventFileUploadStart, EventFileUploadProgress, EventFileUploadEnd] = [
@@ -15,13 +15,11 @@ const EventEditorZoom = new AppEvent("EDITOR_ZOOM");
 const EventEditorMouseDown = new AppEvent("EDITOR_MOUSE_DOWN");
 
 // STATE
-let userState;
+let appState = createAppState();
 
 window.onload = setup;
 
 function setup() {
-    userState = createUserState();
-
     uploadButton = document.getElementById("uploadButton");
     uploadProgress = document.getElementById("uploadProgress");
     fileInput = document.getElementById("imageUpload");
@@ -30,13 +28,10 @@ function setup() {
     editorView = document.querySelector(".view__editor");
 
     editorCanvas = document.querySelector("#editorCanvas");
-    userState.editor.rendering.ctx = editorCanvas.getContext("2d");
-
+    editorCtx = editorCanvas.getContext("2d");
 
     setupEvents();
     subscribeToAppEvents();
-
-    setupEditor();
 }
 
 function setupEvents() {
@@ -46,11 +41,7 @@ function setupEvents() {
     editorCanvas.addEventListener("mousedown", startImagePanning);
     editorCanvas.addEventListener("mousemove", panImage);
     editorCanvas.addEventListener("mouseup", endImagePanning);
-    editorCanvas.addEventListener("mouseout", (evt) => {
-        if (userState.editor.panning) {
-            endImagePanning(evt);
-        }
-    });
+    editorCanvas.addEventListener("mouseout", endImagePanning);
 
     window.addEventListener("resize", handleWindowResize);
     handleWindowResize();
@@ -79,53 +70,11 @@ function subscribeToAppEvents() {
     EventEditorZoom.subscribe(applyImageZoom);
 }
 
-function handleImageUpload(evt) {
-    const files = evt.target.files;
-    if (!files.length) return;
-
-    userState.source = null;
-
-    const [file] = files;
-    const fr = new FileReader();
-    fr.onload = function () {
-        image.src = fr.result;
-    };
-    fr.onprogress = function (evt) {
-        EventFileUploadProgress.fire({ progress: evt.loaded / evt.total });
-    };
-
-    const image = new Image();
-    image.onload = () => {
-        EventFileUploadEnd.fire({ progress: 1 });
-        userState.source = {
-            image,
-            width: image.naturalWidth,
-            height: image.naturalHeight,
-        };
-    };
-
-    EventFileUploadStart.fire({ progress: 0 });
-    fr.readAsDataURL(file);
-}
 
 // state
-function createUserState() {
+function createAppState() {
     return {
         source: null,
         compressionResult: null,
-        editor: {
-            rendering: {
-                ctx: null,
-                raf: null,
-            },
-            scale: 1,
-            panning: false,
-            pan: {
-                oldX: 0,
-                oldY: 0,
-                x: 0,
-                y: 0,
-            },
-        },
     };
 }

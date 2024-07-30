@@ -1,12 +1,11 @@
 function startImagePanning(evt) {
-    const { editor } = userState;
-    editor.panning = true;
-    editor.pan.oldX = evt.pageX;
-    editor.pan.oldY = evt.pageY;
+    editorState.panning = true;
+    editorState.pan.oldX = evt.pageX;
+    editorState.pan.oldY = evt.pageY;
 }
 
 function panImage(evt) {
-    const { pan, panning } = userState.editor;
+    const { pan, panning } = editorState;
     if (!panning) return;
 
     evt.preventDefault();
@@ -20,27 +19,24 @@ function panImage(evt) {
 }
 
 function endImagePanning(_evt) {
-    const { editor } = userState;
-    editor.panning = false;
+    if (!editorState.panning) return;
+    editorState.panning = false;
 }
 
 function handleEditorMouseWheel(evt) {
     evt.preventDefault();
 
-    const oldScale = userState.editor.scale;
+    const oldScale = editorState.scale;
 
-    userState.editor.scale += evt.deltaY * -0.005;
-    userState.editor.scale = Math.min(
-        Math.max(0.15, userState.editor.scale),
-        3
-    );
+    editorState.scale += evt.deltaY * -0.005;
+    editorState.scale = Math.min(Math.max(0.15, editorState.scale), 3);
 
-    const delta = userState.editor.scale - oldScale;
+    const delta = editorState.scale - oldScale;
 
     EventEditorZoom.fire({
         pageX: evt.pageX,
         pageY: evt.pageY,
-        scale: userState.editor.scale,
+        scale: editorState.scale,
         delta,
     });
 }

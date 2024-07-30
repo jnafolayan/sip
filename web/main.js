@@ -2,7 +2,7 @@ let uploadButton, fileInput, uploadProgress;
 
 // VIEWS
 let uploadView, editorView;
-let editorOriginalImage, editorCompressedImage;
+let editorImages, editorOriginalImage, editorCompressedImage;
 
 // EVENTS
 const [EventFileUploadStart, EventFileUploadProgress, EventFileUploadEnd] = [
@@ -11,6 +11,7 @@ const [EventFileUploadStart, EventFileUploadProgress, EventFileUploadEnd] = [
     new AppEvent("FILE_UPLOAD_END"),
 ];
 const EventEditorOpened = new AppEvent("EDITOR_OPENED");
+const EventEditorZoom = new AppEvent("EDITOR_ZOOM");
 
 // STATE
 let userState;
@@ -25,6 +26,7 @@ function setup() {
     uploadView = document.querySelector(".view__upload");
     editorView = document.querySelector(".view__editor");
 
+    editorImages = document.querySelector(".editor__images");
     editorOriginalImage = document.querySelector(".editor__images__original");
     editorCompressedImage = document.querySelector(
         ".editor__images__compressed"
@@ -38,6 +40,8 @@ function setup() {
 
 function setupEvents() {
     fileInput.addEventListener("change", handleImageUpload);
+
+    editorView.addEventListener("wheel", handleEditorMouseWheel);
 }
 
 function subscribeToAppEvents() {
@@ -55,6 +59,7 @@ function subscribeToAppEvents() {
 
     // View
     EventEditorOpened.subscribe(setupEditor);
+    EventEditorZoom.subscribe(applyImageZoom);
 }
 
 function handleImageUpload(evt) {
@@ -79,5 +84,6 @@ function createUserState() {
     return {
         sourceImage: null,
         compressionResult: null,
+        editorZoom: 1,
     };
 }

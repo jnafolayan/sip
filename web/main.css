@@ -16,14 +16,14 @@ body {
     width: 100%;
     /* height: 100vh; */
     color: var(--text);
-    background-color: var(--bg);
 }
 
 .view {
     /* min-height: 100vh; */
-    width: 100%;
-    height: 100%;
+    width: 100vw;
+    min-height: 100vh;
     position: relative;
+    background-color: var(--bg);
 }
 
 .contain {
@@ -88,16 +88,18 @@ body {
 }
 
 .view__editor {
-    position: absolute;
     width: 100vw;
     height: 100vh;
-    background-color: transparent;
+    overflow: hidden;
 }
 
 .editor__images {
     width: 100%;
     height: 100%;
-    position: relative;
+    position: absolute;
+    left: 0;
+    top: 0;
+    transform-origin: center;
 }
 
 .editor__images__original,
@@ -105,5 +107,9 @@ body {
     position: absolute;
     width: 100%;
     height: 100%;
-    background-size: cover;
+    background-size: 100%;
+    background-position: center;
+    background-repeat: no-repeat;
+    top: 0;
+    left: 0;
 }

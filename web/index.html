@@ -10,7 +10,7 @@
 
 <body>
     <div class="view">
-        <div class="view__upload">
+        <div class="view__upload hide">
             <header class="contain header">
                 <h3 class="header__title">Sip.</h3>
                 <span class="header__tiny">image compression software</span>
@@ -19,7 +19,10 @@
             <main class="contain">
                 <div class="view__upload-area">
                     <label class="upload-button" id="uploadButton" for="imageUpload">
+
                         <input id="imageUpload" type="file" accept="image/*" hidden />
+                        <img width="26" height="26" src="https://img.icons8.com/metro/26/FFFFFF/upload.png"
+                            alt="upload" />
                         Click to upload
                     </label>
 
@@ -28,12 +31,30 @@
             </main>
         </div>
 
-        <div class="view__editor hide">
+        <div class="view__editor">
             <canvas class="editor__images" id="editorCanvas">
 
             </canvas>
-            <div class="controls hide">
-
+            <div class="controls">
+                <h4 class="controls__header">Parameters</h4>
+                <div class="controls__item">
+                    <label for="waveletFamily">Wavelet family</label>
+                    <select id="waveletFamily" name="waveletFamily">
+                        <option selected>Haar</option>
+                        <option>Cohen-Daubechies-Feauveau 9/7</option>
+                    </select>
+                </div>
+                <div class="controls__item">
+                    <label for="decompLevel">Level of decomposition</label>
+                    <input id="decompLevel" type="number" min="0" value="1" step="1" />
+                </div>
+                <div class="controls__item">
+                    <label for="threshold">Threshold</label>
+                    <input id="threshold" type="number" min="0" max="255" value="50" step="1" />
+                </div>
+                <div class="controls__item">
+                    <button id="compressButton">Compress</button>
+                </div>
             </div>
         </div>
     </div>

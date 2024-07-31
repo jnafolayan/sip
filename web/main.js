@@ -1,4 +1,5 @@
 let uploadButton, fileInput, uploadProgress;
+let compressButton;
 
 // VIEWS
 let uploadView, editorView;
@@ -23,6 +24,7 @@ function setup() {
     uploadButton = document.getElementById("uploadButton");
     uploadProgress = document.getElementById("uploadProgress");
     fileInput = document.getElementById("imageUpload");
+    compressButton = document.getElementById("compressButton");
 
     uploadView = document.querySelector(".view__upload");
     editorView = document.querySelector(".view__editor");
@@ -32,6 +34,8 @@ function setup() {
 
     setupEvents();
     subscribeToAppEvents();
+
+    setupEditor();
 }
 
 function setupEvents() {
@@ -42,6 +46,12 @@ function setupEvents() {
     editorCanvas.addEventListener("mousemove", panImage);
     editorCanvas.addEventListener("mouseup", endImagePanning);
     editorCanvas.addEventListener("mouseout", endImagePanning);
+
+    compressButton.addEventListener("click", compressSourceImage);
+
+    useControl("waveletFamily", controlCompressionOption("waveletFamily"));
+    useControl("decompLevel", controlCompressionOption("decompLevel"));
+    useControl("threshold", controlCompressionOption("threshold"));
 
     window.addEventListener("resize", handleWindowResize);
     handleWindowResize();
@@ -70,11 +80,15 @@ function subscribeToAppEvents() {
     EventEditorZoom.subscribe(applyImageZoom);
 }
 
-
 // state
 function createAppState() {
     return {
         source: null,
-        compressionResult: null,
+        compressionOptions: {
+            waveletFamily: "haar",
+            decompLevel: 1,
+            threshold: 50,
+        },
+        compressed: null,
     };
 }

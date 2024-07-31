@@ -40,8 +40,8 @@
                 <div class="controls__item">
                     <label for="waveletFamily">Wavelet family</label>
                     <select id="waveletFamily" name="waveletFamily">
-                        <option selected>Haar</option>
-                        <option>Cohen-Daubechies-Feauveau 9/7</option>
+                        <option value="haar" selected>Haar</option>
+                        <option value="cdf97">Cohen-Daubechies-Feauveau 9/7</option>
                     </select>
                 </div>
                 <div class="controls__item">
@@ -61,9 +61,12 @@
 
     <script src="files/events.js"></script>
     <script src="files/anim.js"></script>
-    <script src="events.js"></script>
     <script src="editor/editor.js"></script>
     <script src="editor/events.js"></script>
+    <script src="utils.js"></script>
+    <script src="events.js"></script>
+    <script src="controls.js"></script>
+    <script src="compress.js"></script>
     <script src="main.js"></script>
 </body>
 

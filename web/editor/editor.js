@@ -55,16 +55,11 @@ function editorFrame() {
 
     ctx.clearRect(0, 0, editorCanvas.width, editorCanvas.height);
 
-    let edge =
-        (slider * editorCanvas.width - halfWidth - pan.x) /
-        scaledWidth;
+    let edge = (slider * editorCanvas.width - halfWidth - pan.x) / scaledWidth;
     edge = Math.min(1, Math.max(edge, 0));
 
     ctx.save();
-    ctx.translate(
-        halfWidth + pan.x,
-        halfHeight + pan.y
-    );
+    ctx.translate(halfWidth + pan.x, halfHeight + pan.y);
     ctx.scale(scale, scale);
     ctx.drawImage(
         source.image,
@@ -95,6 +90,34 @@ function editorFrame() {
     ctx.fillStyle = "rgba(40,40,40,.8)";
     const k = mapRange(slider, 0, 1, 0, editorCanvas.width);
     ctx.fillRect(k - w / 2, 0, w, editorCanvas.height);
+
+    // Slider hook
+    const hookRadius = 25;
+    ctx.fillStyle = "#000";
+    ctx.beginPath();
+    ctx.arc(k, halfHeight, hookRadius, 0, 2 * Math.PI);
+    ctx.fill();
+
+    // Slider left triangle
+    const triW = 10;
+    const triH = 20;
+    const gap = 4;
+    ctx.beginPath();
+    ctx.moveTo(k - gap, halfHeight - triH / 2);
+    ctx.lineTo(k - gap - triW, halfHeight);
+    ctx.lineTo(k - gap, halfHeight + triH / 2);
+    ctx.closePath();
+    ctx.fillStyle = "hsl(20, 100%, 55%)";
+    ctx.fill();
+
+    // Slider right triangle
+    ctx.beginPath();
+    ctx.moveTo(k + gap, halfHeight - triH / 2);
+    ctx.lineTo(k + gap + triW, halfHeight);
+    ctx.lineTo(k + gap, halfHeight + triH / 2);
+    ctx.closePath();
+    ctx.fillStyle = "hsl(200, 100%, 55%)";
+    ctx.fill();
 
     editorRAF = requestAnimationFrame(editorFrame);
 }

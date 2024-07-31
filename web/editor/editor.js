@@ -7,7 +7,10 @@ const editorState = {
         x: 0,
         y: 0,
     },
-    slider: 0.3,
+    slider: 0.5,
+    sliding: false,
+    sliderWidth: 10,
+    sliderHookRadius: 25,
 };
 
 let editorRAF;
@@ -46,7 +49,7 @@ function createDummyImage(color) {
 
 function editorFrame() {
     const { source, compressed } = appState;
-    const { pan, scale, slider } = editorState;
+    const { pan, scale, slider, sliderWidth, sliderHookRadius } = editorState;
     const ctx = editorCtx;
 
     const halfWidth = editorCanvas.width * 0.5;
@@ -86,16 +89,14 @@ function editorFrame() {
     ctx.restore();
 
     // slider width
-    const w = 4;
     ctx.fillStyle = "rgba(40,40,40,.8)";
     const k = mapRange(slider, 0, 1, 0, editorCanvas.width);
-    ctx.fillRect(k - w / 2, 0, w, editorCanvas.height);
+    ctx.fillRect(k - sliderWidth / 2, 0, sliderWidth, editorCanvas.height);
 
     // Slider hook
-    const hookRadius = 25;
     ctx.fillStyle = "#000";
     ctx.beginPath();
-    ctx.arc(k, halfHeight, hookRadius, 0, 2 * Math.PI);
+    ctx.arc(k, halfHeight, sliderHookRadius, 0, 2 * Math.PI);
     ctx.fill();
 
     // Slider left triangle

@@ -10,7 +10,7 @@ const editorState = {
     slider: 0.5,
     sliding: false,
     sliderWidth: 10,
-    sliderHookRadius: 25,
+    sliderHookRadius: 20,
 };
 
 let editorRAF;

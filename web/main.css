@@ -162,3 +162,54 @@ body {
     background-color: var(--yellow);
     padding: 8px 4px;
 }
+
+.download-button {
+    position: absolute;
+    bottom: 10px;
+    left: 10px;
+    width: 50px;
+    background-color: transparent;
+    border: 3px solid var(--yellow);
+    color: var(--yellow);
+    padding: 4px 8px;
+    text-align: center;
+    border-radius: 8px;
+}
+
+.results {
+    position: absolute;
+    bottom: 10px;
+    left: calc(10px + 50px + 10px);
+    display: flex;
+    background-color: rgba(40, 40, 40, 0.8);
+    border-radius: 8px;
+}
+
+.results__item {
+    padding: 8px;
+}
+
+.results__item > span:first-child {
+    color: var(--yellow);
+}
+
+.results__item:nth-of-type(even) {
+    border-left: 1px solid #555;
+}
+
+.back-button {
+    position: absolute;   
+    width: 80px; 
+    left: 10px;
+    top: 10px;
+    background-color: rgba(40, 40, 40, 0.7);
+    border: none;
+    border-radius: 8px;
+    padding: 8px 12px;
+    color: #fff;
+}
+
+
+button {
+    cursor: pointer;
+}

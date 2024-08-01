@@ -106,7 +106,7 @@ function createAppState() {
         compressionOptions: {
             waveletFamily: "haar",
             decompLevel: 1,
-            threshold: 50,
+            threshold: 10,
         },
         compressed: null,
         compressing: false,

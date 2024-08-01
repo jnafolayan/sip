@@ -97,7 +97,7 @@ function editorFrame() {
     ctx.restore();
 
     // slider width
-    ctx.fillStyle = "rgba(40,40,40,.8)";
+    ctx.fillStyle = "rgba(40,40,40,.9)";
     const k = mapRange(slider, 0, 1, 0, editorCanvas.width);
     ctx.fillRect(k - sliderWidth / 2, 0, sliderWidth, editorCanvas.height);
 

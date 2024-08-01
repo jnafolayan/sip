@@ -2,8 +2,6 @@ package main
 
 import (
 	"fmt"
-	"image"
-	"image/color"
 	"syscall/js"
 	"time"
 
@@ -11,15 +9,34 @@ import (
 	"github.com/jnafolayan/sip/pkg/wavelet"
 )
 
-func getImageChannels(this js.Value, args []js.Value) interface{} {
-	imageData := args[0]
-	width, height := args[1].Int(), args[2].Int()
-	img := convertImageDataToImage(imageData, width, height)
+//export compressImage
+func compressImage(imageData []uint8, width, height int, opts map[string]interface{}) map[string]interface{} {
+	waveletFamily := opts["waveletFamily"].(string)
+	decompLevel := opts["decompLevel"].(int)
+	threshold := opts["threshold"].(int)
 
-	return img
+	codecOpts := codec.CodecOptions{
+		Wavelet:            wavelet.WaveletType(waveletFamily),
+		DecompositionLevel: decompLevel,
+		ThresholdingFactor: threshold,
+	}
+
+	start := time.Now()
+	compressed, result := codec.EncodeImageData(imageData, width, height, codecOpts)
+	fmt.Printf("took %fs\n", time.Since(start).Seconds())
+
+	// safeCompressed := js.Global().Get("Uint8Array").New(len(compressed))
+	// js.CopyBytesToJS(safeCompressed, compressed)
+
+	return map[string]interface{}{
+		"compressed": compressed,
+		"result": map[string]interface{}{
+			"PSNR": result.PSNR,
+		},
+	}
 }
 
-func compressImage(this js.Value, args []js.Value) interface{} {
+func jsCompressImage(this js.Value, args []js.Value) interface{} {
 	// imageData, width, height, opts
 	jsImageData := args[0]
 	width, height := args[1].Int(), args[2].Int()
@@ -37,16 +54,13 @@ func compressImage(this js.Value, args []js.Value) interface{} {
 		DecompositionLevel: decompLevel,
 		ThresholdingFactor: threshold,
 	}
-	fmt.Println(codecOpts)
 
 	start := time.Now()
 	compressed, result := codec.EncodeImageData(imageData, width, height, codecOpts)
 	fmt.Printf("took %fs\n", time.Since(start).Seconds())
 
-	safeCompressed := make([]interface{}, width*height*4)
-	for i := range compressed {
-		safeCompressed[i] = compressed[i]
-	}
+	safeCompressed := js.Global().Get("Uint8Array").New(len(compressed))
+	js.CopyBytesToJS(safeCompressed, compressed)
 
 	return map[string]interface{}{
 		"Compressed": safeCompressed,
@@ -56,26 +70,9 @@ func compressImage(this js.Value, args []js.Value) interface{} {
 	}
 }
 
-func convertImageDataToImage(imageData js.Value, width, height int) image.Image {
-	img := image.NewRGBA(image.Rect(0, 0, width, height))
-	var x, y int
-	var r, g, b, a uint8
-	for i := 0; i < imageData.Length(); i += 4 {
-		x = (i / 4) % width
-		y = (i / 4) / width
-		r = uint8(imageData.Index(i + 0).Int())
-		g = uint8(imageData.Index(i + 1).Int())
-		b = uint8(imageData.Index(i + 2).Int())
-		a = uint8(imageData.Index(i + 3).Int())
-		img.Set(x, y, color.RGBA{r, g, b, a})
-	}
-	return img
-}
-
 func main() {
-	fmt.Println("WASM Go inited")
-	js.Global().Set("Sip_CompressImage", js.FuncOf(compressImage))
-	js.Global().Set("Sip_GetImageChannels", js.FuncOf(getImageChannels))
+	fmt.Println("WASM Go initialized")
+	js.Global().Set("Sip_CompressImage", js.FuncOf(jsCompressImage))
 
 	<-make(chan bool)
 }

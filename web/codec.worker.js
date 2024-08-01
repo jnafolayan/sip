@@ -5,52 +5,26 @@ if (!WebAssembly.instantiateStreaming) {
     };
 }
 
-const coder = new Worker("codec.worker.js");
-
-async function compressSourceImage() {
-    const { compressionOptions, source } = appState;
+async function compress({ imageData, width, height, compressionOptions }) {
     console.log(compressionOptions);
 
     try {
         const instance = await getWasmModule();
-        const { image, width, height } = source;
-        const imageData = getImagePixels(image, width, height);
-        const { Compressed, Result } = Sip_CompressImage(
+        const { compressed, result } = instance.exports.compressImage(
             imageData,
             width,
             height,
             compressionOptions
         );
-        appState.compressed = {
-            image: createImageFromPixels(Compressed, width, height),
+        return {
+            compressed,
+            result,
             width,
             height,
         };
     } catch (err) {
         return console.error(err);
     }
-}
-
-function getImagePixels(image, width, height) {
-    const canvas = document.createElement("canvas");
-    const ctx = canvas.getContext("2d");
-    canvas.width = width;
-    canvas.height = height;
-    ctx.drawImage(image, 0, 0);
-    return ctx.getImageData(0, 0, width, height).data;
-}
-
-function createImageFromPixels(data, width, height) {
-    const canvas = document.createElement("canvas");
-    const ctx = canvas.getContext("2d");
-    canvas.width = width;
-    canvas.height = height;
-
-    const imageData = ctx.createImageData(width, height);
-    imageData.data.set(data);
-    ctx.putImageData(imageData, 0, 0);
-
-    return canvas;
 }
 
 function getWasmModule() {

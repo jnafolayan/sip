@@ -52,10 +52,8 @@ body {
 }
 
 .header__tiny {
-    display: none;
     font-size: 1rem;
     color: var(--gray);
-    font-style: italic;
 }
 
 .view__upload-area {
@@ -119,7 +117,7 @@ body {
     bottom: 0;
     right: 0;
     width: 300px;
-    height: 350px;
+    height: 330px;
     background-color: var(--bg2);
     border-top-left-radius: 8px;
 }

@@ -21,3 +21,15 @@ func transpose(s signal.Signal2D) signal.Signal2D {
 	}
 	return t
 }
+
+func transposeInPlace(s signal.Signal2D) {
+	_, h := s.Size()
+	var tmp signal.SignalCoeff
+	for i := 0; i < h; i++ {
+		for j := 0; j < i; j++ {
+			tmp = s[i][j]
+			s[i][j] = s[j][i]
+			s[j][i] = tmp
+		}
+	}
+}

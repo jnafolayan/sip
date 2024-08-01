@@ -17,10 +17,10 @@ func (cdf *CDF97Wavelet) InverseTransform(s signal.Signal2D) signal.Signal2D {
 
 	for level := 0; level < cdf.Level; level++ {
 		// Rows
-		result = transpose(result)
+		transposeInPlace(result)
 		result = cdf.Reconstruct(result, height, width)
 		// Cols
-		result = transpose(result)
+		transposeInPlace(result)
 		result = cdf.Reconstruct(result, width, height)
 
 		height *= 2
@@ -68,11 +68,12 @@ func (cdf *CDF97Wavelet) Reconstruct(s signal.Signal2D, width, height int) signa
 	}
 
 	// Write tempBank to s
-	for y := 0; y < width; y++ {
-		for x := 0; x < height; x++ {
-			s[y][x] = tempBank[y][x]
-		}
-	}
+	// for y := 0; y < width; y++ {
+	// 	for x := 0; x < height; x++ {
+	// 		s[y][x] = tempBank[y][x]
+	// 	}
+	// }
+	s = tempBank
 
 	// Do the 1D transform on all cols
 	for x := 0; x < width; x++ {

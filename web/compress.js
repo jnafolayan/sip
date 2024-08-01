@@ -5,9 +5,6 @@ if (!WebAssembly.instantiateStreaming) {
     };
 }
 
-let wasmLoaded = false;
-let moduleInstance = null;
-
 async function compressSourceImage() {
     const { compressionOptions, source } = appState;
     console.log(compressionOptions);
@@ -15,15 +12,15 @@ async function compressSourceImage() {
     try {
         const instance = await getWasmModule();
         const { image, width, height } = source;
-        const imageData = getImageData(image, width, height);
+        const imageData = getImagePixels(image, width, height);
         const { Compressed, Result } = Sip_CompressImage(
-            Array.from(imageData),
+            imageData,
             width,
             height,
             compressionOptions
         );
         appState.compressed = {
-            image: imageFromImageData(Compressed, width, height),
+            image: createImageFromPixels(Compressed, width, height),
             width,
             height,
         };
@@ -32,7 +29,7 @@ async function compressSourceImage() {
     }
 }
 
-function getImageData(image, width, height) {
+function getImagePixels(image, width, height) {
     const canvas = document.createElement("canvas");
     const ctx = canvas.getContext("2d");
     canvas.width = width;
@@ -41,7 +38,7 @@ function getImageData(image, width, height) {
     return ctx.getImageData(0, 0, width, height).data;
 }
 
-function imageFromImageData(data, width, height) {
+function createImageFromPixels(data, width, height) {
     const canvas = document.createElement("canvas");
     const ctx = canvas.getContext("2d");
     canvas.width = width;
@@ -50,28 +47,30 @@ function imageFromImageData(data, width, height) {
     const imageData = ctx.createImageData(width, height);
     imageData.data.set(data);
     ctx.putImageData(imageData, 0, 0);
-    
+
     return canvas;
 }
 
 function getWasmModule() {
     return new Promise((resolve) => {
-        if (!moduleInstance) {
-            loadWasm("main.wasm").then((instance) => {
-                moduleInstance = instance;
-                resolve(instance);
-            });
-        } else {
-            resolve(moduleInstance);
-        }
+        // Fetch a new instance every time
+        loadWasm("main.wasm").then((instance) => {
+            resolve(instance);
+        });
     });
 }
 
 function loadWasm(path) {
+    const memory = new WebAssembly.Memory({
+        initial: Math.pow(2, 16),
+    });
     const go = new Go();
-    go.importObject.env["syscall/js.finalizeRef"] = () => {}
+    go.importObject.env["syscall/js.finalizeRef"] = () => {};
     return new Promise((resolve, reject) => {
-        WebAssembly.instantiateStreaming(fetch(path), go.importObject)
+        WebAssembly.instantiateStreaming(fetch(path), {
+            ...go.importObject,
+            js: { mem: memory },
+        })
             .then(({ instance }) => {
                 go.run(instance);
                 resolve(instance);

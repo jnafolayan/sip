@@ -51,3 +51,46 @@ func calcMeanSquaredError(img1, img2 image.Image) float64 {
 
 	return mse
 }
+
+func computeCompressionResultBetweenImageData(a, b []uint8, width, height int) CompressionResult {
+	return CompressionResult{
+		PSNR: calcPSNRBetweenImageData(a, b, width, height),
+	}
+}
+
+func calcPSNRBetweenImageData(a, b []uint8, width, height int) float64 {
+	mse := calcMeanSquaredErrorBetweenImageData(a, b, width, height)
+	if mse == 0 {
+		return math.Inf(1)
+	}
+
+	return 10 * math.Log10((255*255)/mse)
+}
+
+func calcMeanSquaredErrorBetweenImageData(a, b []uint8, width, height int) float64 {
+	var sum, mse float64
+	var offset int
+	var r1, g1, b1 uint8
+	var r2, g2, b2 uint8
+
+	for y := 0; y < height; y++ {
+		for x := 0; x < width; x++ {
+			offset = (x + y*width) * 4
+			r1 = a[offset+0]
+			g1 = a[offset+1]
+			b1 = a[offset+2]
+			r2 = b[offset+0]
+			g2 = b[offset+1]
+			b2 = b[offset+2]
+
+			// Calculate the squared error for each color channel
+			sum += math.Pow(float64(r1-r2), 2)
+			sum += math.Pow(float64(g1-g2), 2)
+			sum += math.Pow(float64(b1-b2), 2)
+		}
+	}
+
+	mse = sum / float64(width*height*3)
+
+	return mse
+}

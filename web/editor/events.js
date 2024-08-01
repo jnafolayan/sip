@@ -8,7 +8,6 @@ function tryStartMovingSlider(evt) {
     const dx = evt.pageX - slider * editorCanvas.width;
     const dy = evt.pageY - 0.5 * editorCanvas.height;
     const inHook = dx ** 2 + dy ** 2 <= sliderHookRadius ** 2;
-    console.log({ dx, dy });
     if ((evt.pageX >= sliderLeft && evt.pageX <= sliderRight) || inHook) {
         editorState.sliding = true;
         editorCanvas.style.cursor = "ew-resize";

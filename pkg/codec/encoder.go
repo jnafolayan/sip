@@ -5,6 +5,8 @@ import (
 	"image"
 	"image/color"
 	"os"
+	"sync"
+	"time"
 
 	"github.com/jnafolayan/sip/internal/imageutils"
 	"github.com/jnafolayan/sip/pkg/cdf97"
@@ -36,7 +38,10 @@ func EncodeFileAsJPEG(source string, out string, opts CodecOptions) (Compression
 }
 
 func EncodeAsJPEG(img image.Image, out string, opts CodecOptions) (CompressionResult, error) {
+	start := time.Now()
 	compressed, result := Encode(img, opts)
+	dt := time.Since(start)
+	fmt.Printf("took %fs\n", dt.Seconds())
 
 	err := imageutils.SaveImage(out, compressed)
 	if err != nil {
@@ -61,65 +66,136 @@ func Encode(img image.Image, opts CodecOptions) (image.Image, CompressionResult)
 	originalWidth, originalHeight := imgBounds.X, imgBounds.Y
 	channels = trimFatChannels(channels, originalWidth, originalHeight)
 
-	reconstructed := reconstructYCbCrImage(channels)
+	reconstructed := reconstructImage(channels, img)
 
 	// Reconstruct the original image from the unprocessed (original) channels. Doing this
 	// to overcome precision that might have been lost due to conversion from RGB to YCbCr.
-	originalImage := reconstructYCbCrImage(imageChannels)
+	originalImage := reconstructImage(imageChannels, img)
 	result := computeCompressionResult(originalImage, reconstructed)
 
 	return reconstructed, result
 }
 
+func EncodeImageData(imageData []uint8, width, height int, opts CodecOptions) ([]uint8, CompressionResult) {
+	w, _ := getWaveletFamily(opts.Wavelet, opts)
+	imageChannels := getImageChannelsFromImageData(imageData, width, height)
+
+	channels := imageChannels
+	channels = transformChannels(w, opts.ThresholdingFactor, channels)
+
+	// Inverse transform
+	channels = inverseTransformChannels(w, channels)
+
+	// Remove padding that might be added during the transform stage
+	channels = trimFatChannels(channels, width, height)
+
+	reconstructed := make([]uint8, width*height*4)
+	reconstructed = reconstructImageData(channels, imageData, reconstructed)
+
+	// Reconstruct the original image from the unprocessed (original) channels. Doing this
+	// to overcome precision that might have been lost due to conversion from RGB to YCbCr.
+	result := computeCompressionResultBetweenImageData(imageData, reconstructed, width, height)
+
+	return reconstructed, result
+}
+
 func transformChannels(w wavelet.Wavelet, threshold int, channels []signal.Signal2D) []signal.Signal2D {
+	wg := sync.WaitGroup{}
+	wg.Add(len(channels))
+
 	transformedChannels := make([]signal.Signal2D, len(channels))
+	// transformedChannels := channels
 	for i, c := range channels {
-		// Apply wavelet transform on the channels
-		transformed := w.Transform(c)
-		// Hard thresholding
-		coeffs := w.HardThreshold(transformed, threshold)
-		transformedChannels[i] = coeffs
+		go func() {
+			// Apply wavelet transform on the channels
+			transformed := w.Transform(c)
+			// Hard thresholding
+			coeffs := w.HardThreshold(transformed, threshold)
+			transformedChannels[i] = coeffs
+			wg.Done()
+		}()
 	}
+
+	wg.Wait()
 
 	return transformedChannels
 }
 
 func inverseTransformChannels(w wavelet.Wavelet, channels []signal.Signal2D) []signal.Signal2D {
-	transformedChannels := make([]signal.Signal2D, len(channels))
+	wg := sync.WaitGroup{}
+	wg.Add(len(channels))
+
+	// transformedChannels := make([]signal.Signal2D, len(channels))
+	transformedChannels := channels
 	for i, c := range channels {
-		transformed := w.InverseTransform(c)
-		transformedChannels[i] = transformed
+		go func() {
+			transformed := w.InverseTransform(c)
+			transformedChannels[i] = transformed
+			wg.Done()
+		}()
 	}
+
+	wg.Wait()
 
 	return transformedChannels
 }
 
 func trimFatChannels(channels []signal.Signal2D, w, h int) []signal.Signal2D {
-	trimmedChannels := make([]signal.Signal2D, len(channels))
+	wg := sync.WaitGroup{}
+	wg.Add(len(channels))
+
+	// trimmedChannels := make([]signal.Signal2D, len(channels))
+	trimmedChannels := channels
 	for i, c := range channels {
-		trimmedChannels[i] = c.Slice(0, 0, w, h)
+		go func() {
+			trimmedChannels[i] = c.Slice(0, 0, w, h)
+			wg.Done()
+		}()
 	}
+
+	wg.Wait()
+
 	return trimmedChannels
 }
 
-func reconstructImage(channels []signal.Signal2D, joinChannelAtPos func(int, int) color.Color) image.Image {
+func reconstructImage(channels []signal.Signal2D, src image.Image) image.Image {
 	width, height := channels[0].Size()
 	img := image.NewRGBA(image.Rect(0, 0, width, height))
+	Y, Cb, Cr := channels[0], channels[1], channels[2]
+
+	var r, g, b uint8
+	var alpha uint32
+	var c color.RGBA
 	for y := 0; y < height; y++ {
 		for x := 0; x < width; x++ {
-			img.Set(x, y, joinChannelAtPos(x, y))
+			r, g, b = color.YCbCrToRGB(uint8(Y[y][x]), uint8(Cb[y][x]), uint8(Cr[y][x]))
+			_, _, _, alpha = src.At(x, y).RGBA()
+			c = color.RGBA{r, g, b, uint8(alpha)}
+			img.Set(x, y, c)
 		}
 	}
 
 	return img
 }
 
-func reconstructYCbCrImage(channels []signal.Signal2D) image.Image {
+func reconstructImageData(channels []signal.Signal2D, original []uint8, out []uint8) []uint8 {
+	width, height := channels[0].Size()
 	Y, Cb, Cr := channels[0], channels[1], channels[2]
-	return reconstructImage(channels, func(x, y int) color.Color {
-		r, g, b := color.YCbCrToRGB(uint8(Y[y][x]), uint8(Cb[y][x]), uint8(Cr[y][x]))
-		return color.RGBA{r, g, b, 255}
-	})
+	var r, g, b uint8
+
+	var offset int
+	for y := 0; y < height; y++ {
+		for x := 0; x < width; x++ {
+			offset = (x + y*width) * 4
+			r, g, b = color.YCbCrToRGB(uint8(Y[y][x]), uint8(Cb[y][x]), uint8(Cr[y][x]))
+			out[offset+0] = r
+			out[offset+1] = g
+			out[offset+2] = b
+			out[offset+3] = original[offset+3]
+		}
+	}
+
+	return out
 }
 
 func getWaveletFamily(wType wavelet.WaveletType, opts CodecOptions) (wavelet.Wavelet, error) {
@@ -153,9 +229,13 @@ func createEncoders(channels []signal.Signal2D, opts CodecOptions) []*ezw.Encode
 }
 
 func getImageChannels(img image.Image) []signal.Signal2D {
-	yCbCrPixels := imageutils.YCbCr(img)
-	Y, Cb, Cr := imageutils.ExtractYCbCrComponents(yCbCrPixels)
+	Y, Cb, Cr := imageutils.ExtractYCbCrComponents(img)
+	channels := []signal.Signal2D{Y, Cb, Cr}
+	return channels
+}
 
+func getImageChannelsFromImageData(imageData []uint8, width, height int) []signal.Signal2D {
+	Y, Cb, Cr := imageutils.ExtractYCbCrComponentsFromImageData(imageData, width, height)
 	channels := []signal.Signal2D{Y, Cb, Cr}
 	return channels
 }

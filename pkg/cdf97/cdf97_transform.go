@@ -4,8 +4,8 @@ import (
 	"github.com/jnafolayan/sip/pkg/signal"
 )
 
-// getNearestMultipleOf2Size return the nearest largest multiple of 2 for each
-// signal dimension.
+// ~getNearestMultipleOf2Size return the nearest largest multiple of 2 for each
+// signal dimension.~
 func getNearestMultipleOf2Size(s signal.Signal2D, level int) (int, int) {
 	N, M := s.Size()
 	if N != (N>>level)<<level {
@@ -14,6 +14,7 @@ func getNearestMultipleOf2Size(s signal.Signal2D, level int) (int, int) {
 	if M != (M>>level)<<level {
 		M = (M>>level + 1) << level
 	}
+	// We can only work with square images
 	if N > M {
 		M = N
 	} else {

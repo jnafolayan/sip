@@ -75,18 +75,55 @@ func YCbCr(img image.Image) [][]color.YCbCr {
 	return pixelData
 }
 
-func ExtractYCbCrComponents(pixels [][]color.YCbCr) ([][]SignalCoeff, [][]SignalCoeff, [][]SignalCoeff) {
-	Y := make([][]SignalCoeff, len(pixels))
-	Cb := make([][]SignalCoeff, len(pixels))
-	Cr := make([][]SignalCoeff, len(pixels))
-	for i := 0; i < len(pixels); i++ {
-		Y[i] = make([]SignalCoeff, len(pixels[i]))
-		Cb[i] = make([]SignalCoeff, len(pixels[i]))
-		Cr[i] = make([]SignalCoeff, len(pixels[i]))
-		for j := 0; j < len(pixels[i]); j++ {
-			Y[i][j] = SignalCoeff(pixels[i][j].Y)
-			Cb[i][j] = SignalCoeff(pixels[i][j].Cb)
-			Cr[i][j] = SignalCoeff(pixels[i][j].Cr)
+func ExtractYCbCrComponents(img image.Image) ([][]SignalCoeff, [][]SignalCoeff, [][]SignalCoeff) {
+	size := img.Bounds().Size()
+
+	Y := make([][]SignalCoeff, size.Y)
+	Cb := make([][]SignalCoeff, size.Y)
+	Cr := make([][]SignalCoeff, size.Y)
+
+	for i := 0; i < size.Y; i++ {
+		Y[i] = make([]SignalCoeff, size.X)
+		Cb[i] = make([]SignalCoeff, size.X)
+		Cr[i] = make([]SignalCoeff, size.X)
+		for j := 0; j < size.X; j++ {
+			r, g, b, _ := img.At(j, i).RGBA()
+			r1 := uint8(r >> 8)
+			g1 := uint8(g >> 8)
+			b1 := uint8(b >> 8)
+			y, cb, cr := color.RGBToYCbCr(r1, g1, b1)
+
+			Y[i][j] = SignalCoeff(y)
+			Cb[i][j] = SignalCoeff(cb)
+			Cr[i][j] = SignalCoeff(cr)
+		}
+	}
+
+	return Y, Cb, Cr
+}
+
+func ExtractYCbCrComponentsFromImageData(imageData []uint8, width, height int) ([][]SignalCoeff, [][]SignalCoeff, [][]SignalCoeff) {
+	Y := make([][]SignalCoeff, height)
+	Cb := make([][]SignalCoeff, height)
+	Cr := make([][]SignalCoeff, height)
+
+	var r, g, b uint8
+	var offset int
+
+	for y := 0; y < height; y++ {
+		Y[y] = make([]SignalCoeff, width)
+		Cb[y] = make([]SignalCoeff, width)
+		Cr[y] = make([]SignalCoeff, width)
+		for x := 0; x < width; x++ {
+			offset = (x + y*width) * 4
+			r = imageData[offset+0]
+			g = imageData[offset+1]
+			b = imageData[offset+2]
+			yy, cb, cr := color.RGBToYCbCr(r, g, b)
+
+			Y[y][x] = SignalCoeff(yy)
+			Cb[y][x] = SignalCoeff(cb)
+			Cr[y][x] = SignalCoeff(cr)
 		}
 	}
 

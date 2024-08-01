@@ -3,7 +3,7 @@ Image compression using wavelet transforms. Play with it here: https://jnafolaya
 
 **Wavelet families implemented**
 - Haar
-- Cohen-Daubechies-Feauveau: this is particularly more CPU intensive, so expect longer compression times for the large decomposition levels.
+- Cohen-Daubechies-Feauveau: this is particularly more CPU intensive, so expect longer compression times for large decomposition levels.
 
 ## Usage
 If you'd like to run it locally, follow these steps:
@@ -14,7 +14,7 @@ cd sip
 
 # Compress an image
 # wavelet types: haar, cdf97
-# level: 1, 2, 3, ...
+# level (levels of decomposition): 1, 2, 3, ...
 # threshold: 0, 1, 2, ...
 go run main.go compress PATH_TO_FILE -wavelet WAVELET_TYPE -level LEVEL -output OUTPUT_FILE -threshold THRESHOLD
 ```

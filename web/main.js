@@ -17,8 +17,10 @@ const EventEditorMouseDown = new AppEvent("EDITOR_MOUSE_DOWN");
 
 // STATE
 let appState = createAppState();
+let DEBUG = "editor";
 
 window.onload = setup;
+
 
 function setup() {
     uploadButton = document.getElementById("uploadButton");
@@ -35,7 +37,7 @@ function setup() {
     setupEvents();
     subscribeToAppEvents();
 
-    // setupEditor();
+    DEBUG == "editor" && setupEditor();
 }
 
 function setupEvents() {
@@ -76,10 +78,9 @@ function subscribeToAppEvents() {
         setTimeout(() => {
             uploadView.classList.add("hide");
             editorView.classList.remove("hide");
-            compressSourceImage()
-                .then(() => {
-                    EventEditorOpened.fire();
-                });
+            compressSourceImage().then(() => {
+                EventEditorOpened.fire();
+            });
         }, 500);
     });
 

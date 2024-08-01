@@ -26,7 +26,7 @@ async function compress({ taskID, imageData, width, height, compressionOptions }
             height,
         });
     } catch (err) {
-        return console.error(err);
+        postMessage({ taskID, error: err });
     }
 }
 

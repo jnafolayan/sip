@@ -17,18 +17,14 @@ let editorRAF;
 
 function setupEditor() {
     // dummy image
-    // const dummy1 = createDummyImage("#0f0");
-    // const dummy2 = createDummyImage("#0ff");
-    // appState.source = {
-    //     image: dummy1,
-    //     width: dummy1.width,
-    //     height: dummy1.height,
-    // };
-    // appState.compressed = {
-    //     image: dummy2,
-    //     width: dummy2.width,
-    //     height: dummy2.height,
-    // };
+    if (DEBUG == "editor") {
+        const dummy1 = createDummyImage("#0f0");
+        appState.source = {
+            image: dummy1,
+            width: dummy1.width,
+            height: dummy1.height,
+        };
+    }
 
     editorState.pan.x = -appState.source.width / 2;
     editorState.pan.y = -appState.source.height / 2;
@@ -44,6 +40,11 @@ function createDummyImage(color) {
     image.height = 300;
     ctx.fillStyle = color;
     ctx.fillRect(0, 0, image.width, image.height);
+    const step = 50;
+    for (let i = 0; i < image.width; i += step) {
+        ctx.fillStyle = `hsl(${Math.floor(Math.random()*360)}, 100%, 40%)`;
+        ctx.fillRect(i, 0, step, image.height);
+    }
     return image;
 }
 

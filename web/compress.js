@@ -13,13 +13,15 @@ codec.onmessage = (e) => {
     // If this happens for whatever reason
     if (!appState.compressing) return;
 
-    const { compressed, result, width, height } = e.data;
-    appState.compressed = {
-        image: createImageFromPixels(compressed, width, height),
-        result,
-        width,
-        height,
-    };
+    if (!e.data.error) {
+        const { compressed, result, width, height } = e.data;
+        appState.compressed = {
+            image: createImageFromPixels(compressed, width, height),
+            result,
+            width,
+            height,
+        };
+    }
 
     appState.compressing = false;
     compressButton.removeAttribute("disabled");
@@ -36,7 +38,13 @@ async function compressSourceImage() {
     try {
         const { image, width, height } = source;
         const imageData = getImagePixels(image, width, height);
-        codec.postMessage({ taskID, imageData, width, height, compressionOptions });
+        codec.postMessage({
+            taskID,
+            imageData,
+            width,
+            height,
+            compressionOptions,
+        });
     } catch (err) {
         return console.error(err);
     }

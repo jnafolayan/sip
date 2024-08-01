@@ -38,7 +38,8 @@ func jsCompressImage(this js.Value, args []js.Value) interface{} {
 	return map[string]interface{}{
 		"Compressed": safeCompressed,
 		"Result": map[string]interface{}{
-			"PSNR": result.PSNR,
+			"PSNR":  result.PSNR,
+			"Ratio": 0.0,
 		},
 	}
 }

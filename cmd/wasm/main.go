@@ -9,33 +9,6 @@ import (
 	"github.com/jnafolayan/sip/pkg/wavelet"
 )
 
-//export compressImage
-func compressImage(imageData []uint8, width, height int, opts map[string]interface{}) map[string]interface{} {
-	waveletFamily := opts["waveletFamily"].(string)
-	decompLevel := opts["decompLevel"].(int)
-	threshold := opts["threshold"].(int)
-
-	codecOpts := codec.CodecOptions{
-		Wavelet:            wavelet.WaveletType(waveletFamily),
-		DecompositionLevel: decompLevel,
-		ThresholdingFactor: threshold,
-	}
-
-	start := time.Now()
-	compressed, result := codec.EncodeImageData(imageData, width, height, codecOpts)
-	fmt.Printf("took %fs\n", time.Since(start).Seconds())
-
-	// safeCompressed := js.Global().Get("Uint8Array").New(len(compressed))
-	// js.CopyBytesToJS(safeCompressed, compressed)
-
-	return map[string]interface{}{
-		"compressed": compressed,
-		"result": map[string]interface{}{
-			"PSNR": result.PSNR,
-		},
-	}
-}
-
 func jsCompressImage(this js.Value, args []js.Value) interface{} {
 	// imageData, width, height, opts
 	jsImageData := args[0]

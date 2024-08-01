@@ -5,27 +5,38 @@ if (!WebAssembly.instantiateStreaming) {
     };
 }
 
-const coder = new Worker("codec.worker.js");
+const codec = new Worker("codec.worker.js");
+let taskID = 0;
+
+codec.onmessage = (e) => {
+    if (e.data.taskID != taskID) return;
+    // If this happens for whatever reason
+    if (!appState.compressing) return;
+
+    const { compressed, result, width, height } = e.data;
+    appState.compressed = {
+        image: createImageFromPixels(compressed, width, height),
+        result,
+        width,
+        height,
+    };
+
+    appState.compressing = false;
+    compressButton.removeAttribute("disabled");
+};
 
 async function compressSourceImage() {
-    const { compressionOptions, source } = appState;
-    console.log(compressionOptions);
+    const { compressionOptions, source, compressing } = appState;
+    if (compressing) return;
+
+    taskID++;
+    appState.compressing = true;
+    compressButton.setAttribute("disabled", true);
 
     try {
-        const instance = await getWasmModule();
         const { image, width, height } = source;
         const imageData = getImagePixels(image, width, height);
-        const { Compressed, Result } = Sip_CompressImage(
-            imageData,
-            width,
-            height,
-            compressionOptions
-        );
-        appState.compressed = {
-            image: createImageFromPixels(Compressed, width, height),
-            width,
-            height,
-        };
+        codec.postMessage({ taskID, imageData, width, height, compressionOptions });
     } catch (err) {
         return console.error(err);
     }

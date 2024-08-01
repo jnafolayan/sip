@@ -1,3 +1,5 @@
+importScripts("wasm_exec.js");
+
 if (!WebAssembly.instantiateStreaming) {
     WebAssembly.instantiateStreaming = async (resp, importObject) => {
         const source = await (await resp).arrayBuffer();
@@ -5,23 +7,24 @@ if (!WebAssembly.instantiateStreaming) {
     };
 }
 
-async function compress({ imageData, width, height, compressionOptions }) {
-    console.log(compressionOptions);
+onmessage = (e) => compress(e.data);
 
+async function compress({ taskID, imageData, width, height, compressionOptions }) {
     try {
         const instance = await getWasmModule();
-        const { compressed, result } = instance.exports.compressImage(
+        const { Compressed, Result } = Sip_CompressImage(
             imageData,
             width,
             height,
             compressionOptions
         );
-        return {
-            compressed,
-            result,
+        postMessage({
+            taskID,
+            compressed: Compressed,
+            result: Result,
             width,
             height,
-        };
+        });
     } catch (err) {
         return console.error(err);
     }

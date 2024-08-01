@@ -98,5 +98,6 @@ function createAppState() {
             threshold: 50,
         },
         compressed: null,
+        compressing: false,
     };
 }

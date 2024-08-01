@@ -64,28 +64,33 @@ function editorFrame() {
     ctx.save();
     ctx.translate(halfWidth + pan.x, halfHeight + pan.y);
     ctx.scale(scale, scale);
+    
+    // Always render the full width original image
     ctx.drawImage(
         source.image,
         0,
         0,
-        source.width * edge,
+        source.width,
         source.height,
         0,
         0,
-        source.width * edge,
+        source.width,
         source.height
     );
-    ctx.drawImage(
-        compressed.image,
-        edge * compressed.width,
-        0,
-        compressed.width * (1 - edge),
-        compressed.height,
-        source.width * edge,
-        0,
-        compressed.width * (1 - edge),
-        source.height
-    );
+    if (compressed) {
+        // Render the visible compressed region
+        ctx.drawImage(
+            compressed.image,
+            edge * compressed.width,
+            0,
+            compressed.width * (1 - edge),
+            compressed.height,
+            source.width * edge,
+            0,
+            compressed.width * (1 - edge),
+            source.height
+        );
+    }
     ctx.restore();
 
     // slider width

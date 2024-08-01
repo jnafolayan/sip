@@ -2,7 +2,6 @@ package cdf97
 
 import "github.com/jnafolayan/sip/pkg/signal"
 
-// Inspired by https://gist.github.com/CoderSherlock/834e9eb918eeb0dfee5f4550077f57f8
 type CDF97Wavelet struct {
 	Level int
 }

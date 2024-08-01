@@ -14,14 +14,6 @@ import (
 	"github.com/jnafolayan/sip/pkg/wavelet"
 )
 
-func Encode(img image.Image, out string, opts CodecOptions) {
-	// w, _ := getWaveletFamily(opts.Wavelet, opts)
-	// channels := getImageChannels(img)
-	// channels = transformChannels(w, opts.ThresholdingFactor, channels)
-
-	// encoders := createEncoders(channels, opts)
-}
-
 func EncodeFileAsJPEG(source string, out string, opts CodecOptions) (CompressionResult, error) {
 	img, err := imageutils.ReadImage(source)
 	if err != nil {
@@ -44,6 +36,17 @@ func EncodeFileAsJPEG(source string, out string, opts CodecOptions) (Compression
 }
 
 func EncodeAsJPEG(img image.Image, out string, opts CodecOptions) (CompressionResult, error) {
+	compressed, result := Encode(img, opts)
+
+	err := imageutils.SaveImage(out, compressed)
+	if err != nil {
+		return result, err
+	}
+
+	return result, err
+}
+
+func Encode(img image.Image, opts CodecOptions) (image.Image, CompressionResult) {
 	w, _ := getWaveletFamily(opts.Wavelet, opts)
 	imageChannels := getImageChannels(img)
 
@@ -60,17 +63,12 @@ func EncodeAsJPEG(img image.Image, out string, opts CodecOptions) (CompressionRe
 
 	reconstructed := reconstructYCbCrImage(channels)
 
-	err := imageutils.SaveImage(out, reconstructed)
-	if err != nil {
-		return CompressionResult{}, err
-	}
-
 	// Reconstruct the original image from the unprocessed (original) channels. Doing this
 	// to overcome precision that might have been lost due to conversion from RGB to YCbCr.
 	originalImage := reconstructYCbCrImage(imageChannels)
 	result := computeCompressionResult(originalImage, reconstructed)
 
-	return result, err
+	return reconstructed, result
 }
 
 func transformChannels(w wavelet.Wavelet, threshold int, channels []signal.Signal2D) []signal.Signal2D {

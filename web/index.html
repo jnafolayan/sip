@@ -10,7 +10,7 @@
 
 <body>
     <div class="view">
-        <div class="view__upload hide">
+        <div class="view__upload">
             <header class="contain header">
                 <h3 class="header__title">Sip.</h3>
                 <span class="header__tiny">image compression software</span>
@@ -31,7 +31,7 @@
             </main>
         </div>
 
-        <div class="view__editor">
+        <div class="view__editor hide">
             <canvas class="editor__images" id="editorCanvas">
 
             </canvas>
@@ -59,6 +59,7 @@
         </div>
     </div>
 
+    <script src="wasm_exec.js"></script>
     <script src="files/events.js"></script>
     <script src="files/anim.js"></script>
     <script src="editor/editor.js"></script>

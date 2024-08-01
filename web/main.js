@@ -35,7 +35,7 @@ function setup() {
     setupEvents();
     subscribeToAppEvents();
 
-    setupEditor();
+    // setupEditor();
 }
 
 function setupEvents() {
@@ -76,7 +76,10 @@ function subscribeToAppEvents() {
         setTimeout(() => {
             uploadView.classList.add("hide");
             editorView.classList.remove("hide");
-            EventEditorOpened.fire();
+            compressSourceImage()
+                .then(() => {
+                    EventEditorOpened.fire();
+                });
         }, 500);
     });
 

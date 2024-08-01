@@ -1,7 +1,11 @@
 function useControl(id, onChange) {
     const element = document.getElementById(id);
     element.addEventListener("change", function (evt) {
-        onChange(evt.target.value);
+        let value = evt.target.value;
+        if (evt.target.getAttribute("type") == "number") {
+            value = Number(value);
+        }
+        onChange(value);
     });
 }
 

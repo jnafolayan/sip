@@ -1,11 +1,13 @@
 # Sip
-Image compression using wavelet transforms.
+Image compression using wavelet transforms. Play with it here: https://jnafolayan.github.io/sip/web/.
 
 **Wavelet families implemented**
 - Haar
-- Cohen-Daubechies-Feauveau
+- Cohen-Daubechies-Feauveau: this is particularly more CPU intensive, so expect longer compression times for the large decomposition levels.
 
-## Installation
+## Usage
+If you'd like to run it locally, follow these steps:
+
 ```sh
 git clone https://github.com/jnafolayan/sip
 cd sip
@@ -15,5 +17,4 @@ cd sip
 # level: 1, 2, 3, ...
 # threshold: 0, 1, 2, ...
 go run main.go compress PATH_TO_FILE -wavelet WAVELET_TYPE -level LEVEL -output OUTPUT_FILE -threshold THRESHOLD
-
 ```

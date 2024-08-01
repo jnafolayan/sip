@@ -15,15 +15,28 @@ codec.onmessage = (e) => {
 
     if (!e.data.error) {
         const { compressed, result, width, height } = e.data;
+        psnrElement.innerText = result.PSNR.toFixed(2);
+
+        const image = createImageFromPixels(compressed, width, height);
+        const url = image.toDataURL("image/jpeg");
+        var base64str = url.substring(23);
+        var decoded = atob(base64str);
+
+        result.Ratio = appState.source.size / decoded.length;
+        ratioElement.innerText = result.Ratio.toFixed(1);
+
         appState.compressed = {
-            image: createImageFromPixels(compressed, width, height),
+            image,
             result,
             width,
             height,
+            url,
+            size: decoded.length,
         };
     }
 
     appState.compressing = false;
+    compressButton.innerText = "Compress";
     compressButton.removeAttribute("disabled");
 };
 
@@ -33,6 +46,7 @@ async function compressSourceImage() {
 
     taskID++;
     appState.compressing = true;
+    compressButton.innerText = "Compressing...";
     compressButton.setAttribute("disabled", true);
 
     try {

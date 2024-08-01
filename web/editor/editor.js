@@ -23,7 +23,9 @@ function setupEditor() {
             image: dummy1,
             width: dummy1.width,
             height: dummy1.height,
+            size: atob(dummy1.toDataURL("image/jpeg").substring(23)).length,
         };
+        compressSourceImage();
     }
 
     editorState.pan.x = -appState.source.width / 2;
@@ -146,4 +148,15 @@ function applyImageZoom({ pageX, pageY, scale, delta }) {
 
     pan.x += offsetX;
     pan.y += offsetY;
+}
+
+function downloadCompressedImage() {
+    const {compressed, source} = appState;
+    if (!compressed || !source) return;
+
+    const url = compressed.url || compressed.image.toDataURL("image/jpeg");
+    const link = document.createElement("a");
+    link.download = `${source.name || "sip"}-compressed.jpeg`;
+    link.href = url;
+    link.click();
 }

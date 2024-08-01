@@ -70,23 +70,23 @@ func calcPSNRBetweenImageData(a, b []uint8, width, height int) float64 {
 func calcMeanSquaredErrorBetweenImageData(a, b []uint8, width, height int) float64 {
 	var sum, mse float64
 	var offset int
-	var r1, g1, b1 uint8
-	var r2, g2, b2 uint8
+	var r1, g1, b1 float64
+	var r2, g2, b2 float64
 
 	for y := 0; y < height; y++ {
 		for x := 0; x < width; x++ {
 			offset = (x + y*width) * 4
-			r1 = a[offset+0]
-			g1 = a[offset+1]
-			b1 = a[offset+2]
-			r2 = b[offset+0]
-			g2 = b[offset+1]
-			b2 = b[offset+2]
+			r1 = float64(a[offset+0])
+			g1 = float64(a[offset+1])
+			b1 = float64(a[offset+2])
+			r2 = float64(b[offset+0])
+			g2 = float64(b[offset+1])
+			b2 = float64(b[offset+2])
 
 			// Calculate the squared error for each color channel
-			sum += math.Pow(float64(r1-r2), 2)
-			sum += math.Pow(float64(g1-g2), 2)
-			sum += math.Pow(float64(b1-b2), 2)
+			sum += math.Pow(r1-r2, 2)
+			sum += math.Pow(g1-g2, 2)
+			sum += math.Pow(b1-b2, 2)
 		}
 	}
 

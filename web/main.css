@@ -163,6 +163,10 @@ body {
     padding: 8px 4px;
 }
 
+.compress-button:disabled {
+    background: var(--gray);
+}
+
 .download-button {
     position: absolute;
     bottom: 10px;

@@ -94,7 +94,9 @@ func EncodeImageData(imageData []uint8, width, height int, opts CodecOptions) ([
 
 	// Reconstruct the original image from the unprocessed (original) channels. Doing this
 	// to overcome precision that might have been lost due to conversion from RGB to YCbCr.
-	result := computeCompressionResultBetweenImageData(imageData, reconstructed, width, height)
+	originalImageData := make([]uint8, width*height*4)
+	originalImageData = reconstructImageData(imageChannels, imageData, originalImageData)
+	result := computeCompressionResultBetweenImageData(originalImageData, reconstructed, width, height)
 
 	return reconstructed, result
 }

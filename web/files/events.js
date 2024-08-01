@@ -20,6 +20,8 @@ function handleImageUpload(evt) {
             image,
             width: image.naturalWidth,
             height: image.naturalHeight,
+            size: file.size,
+            name: file.name,
         };
     };
 

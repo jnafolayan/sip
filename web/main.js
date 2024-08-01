@@ -1,9 +1,10 @@
 let uploadButton, fileInput, uploadProgress;
-let compressButton;
+let compressButton, downloadButton, backButton;
 
 // VIEWS
 let uploadView, editorView;
 let editorCanvas, editorCtx;
+let psnrElement, ratioElement;
 
 // EVENTS
 const [EventFileUploadStart, EventFileUploadProgress, EventFileUploadEnd] = [
@@ -17,16 +18,19 @@ const EventEditorMouseDown = new AppEvent("EDITOR_MOUSE_DOWN");
 
 // STATE
 let appState = createAppState();
-let DEBUG = "editor";
+let DEBUG = "";
 
 window.onload = setup;
-
 
 function setup() {
     uploadButton = document.getElementById("uploadButton");
     uploadProgress = document.getElementById("uploadProgress");
     fileInput = document.getElementById("imageUpload");
     compressButton = document.getElementById("compressButton");
+    backButton = document.getElementById("backButton");
+    downloadButton = document.getElementById("downloadButton");
+    psnrElement = document.getElementById("psnr");
+    ratioElement = document.getElementById("compressionRatio");
 
     uploadView = document.querySelector(".view__upload");
     editorView = document.querySelector(".view__editor");
@@ -37,7 +41,11 @@ function setup() {
     setupEvents();
     subscribeToAppEvents();
 
-    DEBUG == "editor" && setupEditor();
+    if (DEBUG == "editor") {
+        uploadView.classList.add("hide");
+        editorView.classList.remove("hide");
+        setupEditor();
+    }
 }
 
 function setupEvents() {
@@ -55,6 +63,8 @@ function setupEvents() {
     editorCanvas.addEventListener("mouseout", endSliding);
 
     compressButton.addEventListener("click", compressSourceImage);
+    backButton.addEventListener("click", () => location.reload());
+    downloadButton.addEventListener("click", downloadCompressedImage);
 
     useControl("waveletFamily", controlCompressionOption("waveletFamily"));
     useControl("decompLevel", controlCompressionOption("decompLevel"));

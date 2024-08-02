@@ -20,7 +20,7 @@ const EventEditorMouseDown = new AppEvent("EDITOR_MOUSE_DOWN");
 
 // STATE
 let appState = createAppState();
-let DEBUG = "";
+let DEBUG = "editor";
 
 window.onload = setup;
 
@@ -57,7 +57,9 @@ function setupEvents() {
 
     editorView.addEventListener("wheel", handleEditorMouseWheel);
     editorCanvas.addEventListener("mousedown", startImagePanning);
+    editorCanvas.addEventListener("touchstart", startImagePanningMobile);
     editorCanvas.addEventListener("mousemove", panImage);
+    editorCanvas.addEventListener("touchmove", panImageMobile);
     editorCanvas.addEventListener("mouseup", endImagePanning);
     editorCanvas.addEventListener("mouseout", endImagePanning);
 

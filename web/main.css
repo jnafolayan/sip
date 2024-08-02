@@ -110,6 +110,8 @@ body {
     position: absolute;
     left: 0;
     top: 0;
+    touch-action: none;
+    user-select: none;
 }
 
 .controls {
@@ -214,4 +216,16 @@ body {
 
 button {
     cursor: pointer;
+}
+
+@media screen and (max-width: 767px) {
+    .controls {
+        left: 10px;
+        width: calc(100% - 20px);
+        bottom: 70px;
+    }
+
+    .controls__header:first-child {
+        border-top-right-radius: 8px;
+    }
 }

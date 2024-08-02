@@ -45,7 +45,8 @@ function tryMoveSlider(evt) {
 function tryMoveSliderMobile(evt) {
     const { sliding } = editorState;
     if (!sliding) return;
-    editorState.slider = (evt.changedTouches[0].pageX - slidingOffset) / editorCanvas.width;
+    editorState.slider =
+        (evt.changedTouches[0].pageX - slidingOffset) / editorCanvas.width;
 }
 
 function endSliding(_evt) {
@@ -102,7 +103,6 @@ function panImageMobile(evt) {
     pan.x += dx;
     pan.y += dy;
 
-
     pan.oldX = touch.pageX;
     pan.oldY = touch.pageY;
 }
@@ -128,4 +128,52 @@ function handleEditorMouseWheel(evt) {
         scale: editorState.scale,
         delta,
     });
+}
+
+let fingersDistApart = 0;
+let mobileZooming = false;
+function tryStartMobileZoom(evt) {
+    if (!evt.touches || evt.touches.length != 2) return;
+    if (mobileZooming) return;
+    evt.preventDefault();
+
+    const [a, b] = evt.touches;
+    fingersDistApart = Math.hypot(a.pageX - b.pageX, a.pageY - b.pageY);
+    mobileZooming = true;
+}
+
+function tryMobileZoom(evt) {
+    if (!evt.changedTouches || evt.changedTouches.length != 2) return;
+    if (!mobileZooming) return;
+    evt.preventDefault();
+
+    const [a, b] = evt.changedTouches;
+    const curFingersDistApart = Math.hypot(
+        a.pageX - b.pageX,
+        a.pageY - b.pageY
+    );
+    const changeFactor = curFingersDistApart / fingersDistApart;
+
+    const oldScale = editorState.scale;
+
+    editorState.scale += (changeFactor - oldScale) * 0.2;
+    editorState.scale = Math.min(Math.max(0.15, editorState.scale), 3);
+
+    const delta = editorState.scale - oldScale;
+
+    const midX = a.pageX + (b.pageX - a.pageX) / 2;
+    const midY = a.pageY + (b.pageY - a.pageY) / 2;
+    EventEditorZoom.fire({
+        pageX: midX,
+        pageY: midY,
+        scale: editorState.scale,
+        delta,
+    });
+}
+
+function endMobileZoom(_evt) {
+    if (mobileZooming) {
+        mobileZooming = false;
+        fingersDistApart = 0;
+    }
 }

@@ -62,11 +62,15 @@ function setupEvents() {
     editorCanvas.addEventListener("touchmove", panImageMobile);
     editorCanvas.addEventListener("mouseup", endImagePanning);
     editorCanvas.addEventListener("mouseout", endImagePanning);
+    editorCanvas.addEventListener("touchend", endImagePanning);
 
     editorCanvas.addEventListener("mousedown", tryStartMovingSlider);
+    editorCanvas.addEventListener("touchstart", tryStartMovingSliderMobile);
     editorCanvas.addEventListener("mousemove", tryMoveSlider);
+    editorCanvas.addEventListener("touchmove", tryMoveSliderMobile);
     editorCanvas.addEventListener("mouseup", endSliding);
     editorCanvas.addEventListener("mouseout", endSliding);
+    editorCanvas.addEventListener("touchend", endSliding);
 
     compressButton.addEventListener("click", compressSourceImage);
     backButton.addEventListener("click", () => location.reload());

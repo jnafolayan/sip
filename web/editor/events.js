@@ -1,6 +1,8 @@
 let slidingOffset = 0;
 
 function tryStartMovingSlider(evt) {
+    evt.stopPropagation();
+
     const { slider, sliderWidth, sliderHookRadius } = editorState;
     const sliderLeft = slider * editorCanvas.width - sliderWidth * 0.5;
     const sliderRight = slider * editorCanvas.width + sliderWidth * 0.5;
@@ -13,14 +15,37 @@ function tryStartMovingSlider(evt) {
         editorCanvas.style.cursor = "ew-resize";
         slidingOffset = dx;
     }
+}
 
+function tryStartMovingSliderMobile(evt) {
     evt.stopPropagation();
+
+    const [touch] = evt.touches;
+
+    const { slider, sliderWidth, sliderHookRadius } = editorState;
+    const sliderLeft = slider * editorCanvas.width - sliderWidth * 0.5;
+    const sliderRight = slider * editorCanvas.width + sliderWidth * 0.5;
+
+    const dx = touch.pageX - slider * editorCanvas.width;
+    const dy = touch.pageY - 0.5 * editorCanvas.height;
+    const inHook = dx ** 2 + dy ** 2 <= sliderHookRadius ** 2;
+    if ((touch.pageX >= sliderLeft && touch.pageX <= sliderRight) || inHook) {
+        editorState.sliding = true;
+        editorCanvas.style.cursor = "ew-resize";
+        slidingOffset = dx;
+    }
 }
 
 function tryMoveSlider(evt) {
     const { sliding } = editorState;
     if (!sliding) return;
     editorState.slider = (evt.pageX - slidingOffset) / editorCanvas.width;
+}
+
+function tryMoveSliderMobile(evt) {
+    const { sliding } = editorState;
+    if (!sliding) return;
+    editorState.slider = (evt.changedTouches[0].pageX - slidingOffset) / editorCanvas.width;
 }
 
 function endSliding(_evt) {

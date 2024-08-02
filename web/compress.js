@@ -76,31 +76,3 @@ async function compressSourceImage() {
         return console.error(err);
     }
 }
-
-function getWasmModule() {
-    return new Promise((resolve) => {
-        // Fetch a new instance every time
-        loadWasm("main.wasm").then((instance) => {
-            resolve(instance);
-        });
-    });
-}
-
-function loadWasm(path) {
-    const memory = new WebAssembly.Memory({
-        initial: Math.pow(2, 16),
-    });
-    const go = new Go();
-    go.importObject.env["syscall/js.finalizeRef"] = () => {};
-    return new Promise((resolve, reject) => {
-        WebAssembly.instantiateStreaming(fetch(path), {
-            ...go.importObject,
-            js: { mem: memory },
-        })
-            .then(({ instance }) => {
-                go.run(instance);
-                resolve(instance);
-            })
-            .catch(reject);
-    });
-}

@@ -1,3 +1,9 @@
+const [EventFileUploadStart, EventFileUploadProgress, EventFileUploadEnd] = [
+    new AppEvent("FILE_UPLOAD_START"),
+    new AppEvent("FILE_UPLOAD_PROGRESS"),
+    new AppEvent("FILE_UPLOAD_END"),
+];
+
 function handleImageUpload(evt) {
     const files = evt.target.files;
     if (!files.length) return;

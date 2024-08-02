@@ -1,4 +1,4 @@
-importScripts("wasm_exec.js");
+importScripts("assets/wasm_exec.js");
 
 if (!WebAssembly.instantiateStreaming) {
     WebAssembly.instantiateStreaming = async (resp, importObject) => {
@@ -11,7 +11,7 @@ onmessage = (e) => compress(e.data);
 
 async function compress({ taskID, imageData, width, height, compressionOptions }) {
     try {
-        const instance = await getWasmModule();
+        await getWasmModule();
         const { Compressed, Result } = Sip_CompressImage(
             imageData,
             width,
@@ -33,7 +33,7 @@ async function compress({ taskID, imageData, width, height, compressionOptions }
 function getWasmModule() {
     return new Promise((resolve) => {
         // Fetch a new instance every time
-        loadWasm("main.wasm").then((instance) => {
+        loadWasm("assets/main.wasm").then((instance) => {
             resolve(instance);
         });
     });
@@ -41,7 +41,7 @@ function getWasmModule() {
 
 function loadWasm(path) {
     const memory = new WebAssembly.Memory({
-        initial: Math.pow(2, 16),
+        initial: Math.pow(2, 8), // 16mb
     });
     const go = new Go();
     go.importObject.env["syscall/js.finalizeRef"] = () => {};

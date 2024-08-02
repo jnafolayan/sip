@@ -1,3 +1,7 @@
+const EventEditorOpened = new AppEvent("EDITOR_OPENED");
+const EventEditorZoom = new AppEvent("EDITOR_ZOOM");
+const EventEditorMouseDown = new AppEvent("EDITOR_MOUSE_DOWN");
+
 const editorState = {
     scale: 1,
     panning: false,
@@ -23,7 +27,8 @@ function setupEditor() {
             image: dummy1,
             width: dummy1.width,
             height: dummy1.height,
-            size: atob(dummy1.toDataURL("image/jpeg").substring(23)).length,
+            size: atob(dummy1.toDataURL("image/jpeg", 0.75).substring(23))
+                .length,
         };
         compressSourceImage();
     }
@@ -131,7 +136,7 @@ function editorFrame() {
     editorRAF = requestAnimationFrame(editorFrame);
 }
 
-function applyImageZoom({ pageX, pageY, scale, delta }) {
+function applyEditorZoom({ pageX, pageY, delta }) {
     const { pan } = editorState;
 
     const centerX = editorCanvas.width / 2;
@@ -154,7 +159,7 @@ function downloadCompressedImage() {
     const { compressed, source } = appState;
     if (!compressed || !source) return;
 
-    const { file, objectURL } = compressed;
+    const { objectURL } = compressed;
     const link = document.createElement("a");
     link.href = objectURL;
     link.click();

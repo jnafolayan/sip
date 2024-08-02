@@ -8,16 +8,6 @@ let uploadView, editorView;
 let editorCanvas, editorCtx;
 let psnrElement, ratioElement;
 
-// EVENTS
-const [EventFileUploadStart, EventFileUploadProgress, EventFileUploadEnd] = [
-    new AppEvent("FILE_UPLOAD_START"),
-    new AppEvent("FILE_UPLOAD_PROGRESS"),
-    new AppEvent("FILE_UPLOAD_END"),
-];
-const EventEditorOpened = new AppEvent("EDITOR_OPENED");
-const EventEditorZoom = new AppEvent("EDITOR_ZOOM");
-const EventEditorMouseDown = new AppEvent("EDITOR_MOUSE_DOWN");
-
 // STATE
 let appState = createAppState();
 let DEBUG = "editor";
@@ -27,6 +17,19 @@ window.onload = setup;
 function setup() {
     console.log(`Sip v${VERSION}.`);
 
+    setupDOM();
+
+    setupEvents();
+    subscribeToAppEvents();
+
+    if (DEBUG == "editor") {
+        uploadView.classList.add("hide");
+        editorView.classList.remove("hide");
+        setupEditor();
+    }
+}
+
+function setupDOM() {
     uploadButton = document.getElementById("uploadButton");
     uploadProgress = document.getElementById("uploadProgress");
     fileInput = document.getElementById("imageUpload");
@@ -41,15 +44,6 @@ function setup() {
 
     editorCanvas = document.querySelector("#editorCanvas");
     editorCtx = editorCanvas.getContext("2d");
-
-    setupEvents();
-    subscribeToAppEvents();
-
-    if (DEBUG == "editor") {
-        uploadView.classList.add("hide");
-        editorView.classList.remove("hide");
-        setupEditor();
-    }
 }
 
 function setupEvents() {
@@ -110,7 +104,7 @@ function subscribeToAppEvents() {
 
     // View
     EventEditorOpened.subscribe(setupEditor);
-    EventEditorZoom.subscribe(applyImageZoom);
+    EventEditorZoom.subscribe(applyEditorZoom);
 }
 
 // state

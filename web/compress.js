@@ -25,11 +25,6 @@ async function handleWorkerMessage(e) {
         const fileName = `${sourceFileName || "sip" + taskID}-compressed.jpg`;
         const compressedFile = await exportCanvasToJPEG(image, fileName, 0.75);
 
-        console.log({
-            source: sourceFileSize,
-            compressed: compressedFile.size,
-        });
-
         result.Ratio = sourceFileSize / compressedFile.size;
 
         ratioElement.innerText = result.Ratio.toFixed(1);

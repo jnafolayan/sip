@@ -26,14 +26,14 @@ func ReadImage(fpath string) (image.Image, error) {
 	return image, nil
 }
 
-func SaveImage(fpath string, img image.Image) error {
-	f, err := os.Create(fpath)
+func SaveImage(dest string, img image.Image) error {
+	f, err := os.Create(dest)
 	if err != nil {
 		return err
 	}
 	defer f.Close()
 
-	return jpeg.Encode(f, img, nil)
+	return jpeg.Encode(f, img, &jpeg.Options{Quality: 75})
 }
 
 func Grayscale(img image.Image) [][]SignalCoeff {
@@ -73,6 +73,44 @@ func YCbCr(img image.Image) [][]color.YCbCr {
 	}
 
 	return pixelData
+}
+
+func ConvertImageToImageData(img image.Image) []uint8 {
+	width, height := img.Bounds().Dx(), img.Bounds().Dy()
+	result := make([]uint8, width*height*4)
+
+	var r, g, b, a uint32
+	var offset int
+
+	for y := 0; y < height; y++ {
+		for x := 0; x < width; x++ {
+			offset = (x + y*width) * 4
+			r, g, b, a = img.At(x, y).RGBA()
+			result[offset+0] = uint8(r >> 8)
+			result[offset+1] = uint8(g >> 8)
+			result[offset+2] = uint8(b >> 8)
+			result[offset+3] = uint8(a >> 8)
+		}
+	}
+
+	return result
+}
+
+func ConvertImageDataToImage(imageData []uint8, width, height int) image.Image {
+	img := image.NewRGBA(image.Rect(0, 0, width, height))
+
+	var r, g, b, a uint8
+	var x, y int
+
+	for i := 0; i < len(imageData); i += 4 {
+		r = imageData[i+0]
+		g = imageData[i+1]
+		b = imageData[i+2]
+		a = imageData[i+3]
+		img.Set(x, y, color.RGBA{r, g, b, a})
+	}
+
+	return img
 }
 
 func ExtractYCbCrComponents(img image.Image) ([][]SignalCoeff, [][]SignalCoeff, [][]SignalCoeff) {

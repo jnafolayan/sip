@@ -16,16 +16,16 @@ import (
 	"github.com/jnafolayan/sip/pkg/wavelet"
 )
 
-func EncodeFileAsJPEG(source string, out string, opts CodecOptions) (CompressionResult, error) {
-	img, err := imageutils.ReadImage(source)
+func EncodeFileAsJPEG(src string, dest string, opts CodecOptions) (CompressionResult, error) {
+	img, err := imageutils.ReadImage(src)
 	if err != nil {
 		return CompressionResult{}, fmt.Errorf("compress: %w", err)
 	}
 
-	result, err := EncodeAsJPEG(img, out, opts)
+	result, err := EncodeAsJPEG(img, dest, opts)
 	if err == nil {
-		srcStat, srcStatErr := os.Stat(source)
-		outStat, outStatErr := os.Stat(out)
+		srcStat, srcStatErr := os.Stat(src)
+		outStat, outStatErr := os.Stat(dest)
 		if srcStatErr != nil || outStatErr != nil {
 			result.Ratio = -1
 			return result, nil
@@ -37,13 +37,18 @@ func EncodeFileAsJPEG(source string, out string, opts CodecOptions) (Compression
 	return result, err
 }
 
-func EncodeAsJPEG(img image.Image, out string, opts CodecOptions) (CompressionResult, error) {
-	start := time.Now()
-	compressed, result := Encode(img, opts)
-	dt := time.Since(start)
-	fmt.Printf("took %fs\n", dt.Seconds())
+func EncodeAsJPEG(img image.Image, dest string, opts CodecOptions) (CompressionResult, error) {
+	width, height := img.Bounds().Dx(), img.Bounds().Dy()
 
-	err := imageutils.SaveImage(out, compressed)
+	// Speed up computations by <66% using a 1-D RGBA slice over an image
+	imageData := imageutils.ConvertImageToImageData(img)
+
+	start := time.Now()
+	compressedImageData, result := EncodeImageData(imageData, width, height, opts)
+	fmt.Printf("took %fs\n", time.Since(start).Seconds())
+
+	compressed := imageutils.ConvertImageDataToImage(compressedImageData, width, height)
+	err := imageutils.SaveImage(dest, compressed)
 	if err != nil {
 		return result, err
 	}

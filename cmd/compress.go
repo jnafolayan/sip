@@ -54,8 +54,8 @@ var compressCmd = &cli.Command{
 			return err
 		}
 
-		fmt.Println(result.PSNR)
-		fmt.Println(result.Ratio)
+		fmt.Println("PSNR:", result.PSNR)
+		fmt.Println("Ratio:", result.Ratio)
 
 		return nil
 	},

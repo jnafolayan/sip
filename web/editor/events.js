@@ -1,52 +1,37 @@
 let slidingOffset = 0;
 
-function tryStartMovingSlider(evt) {
-    evt.stopPropagation();
-
+function initSliding(x, y) {
     const { slider, sliderWidth, sliderHookRadius } = editorState;
     const sliderLeft = slider * editorCanvas.width - sliderWidth * 0.5;
     const sliderRight = slider * editorCanvas.width + sliderWidth * 0.5;
 
-    const dx = evt.pageX - slider * editorCanvas.width;
-    const dy = evt.pageY - 0.5 * editorCanvas.height;
+    const dx = x - slider * editorCanvas.width;
+    const dy = y - 0.5 * editorCanvas.height;
     const inHook = dx ** 2 + dy ** 2 <= sliderHookRadius ** 2;
-    if ((evt.pageX >= sliderLeft && evt.pageX <= sliderRight) || inHook) {
+    if ((x >= sliderLeft && x <= sliderRight) || inHook) {
         editorState.sliding = true;
         editorCanvas.style.cursor = "ew-resize";
         slidingOffset = dx;
+        return true;
     }
+
+    return false;
 }
 
-function tryStartMovingSliderMobile(evt) {
+function moveSlider(x) {
+    const { sliding } = editorState;
+    if (!sliding) return false;
+    editorState.slider = (x - slidingOffset) / editorCanvas.width;
+    return true;
+}
+
+function tryStartMovingSlider(evt) {
     evt.stopPropagation();
-
-    const [touch] = evt.touches;
-
-    const { slider, sliderWidth, sliderHookRadius } = editorState;
-    const sliderLeft = slider * editorCanvas.width - sliderWidth * 0.5;
-    const sliderRight = slider * editorCanvas.width + sliderWidth * 0.5;
-
-    const dx = touch.pageX - slider * editorCanvas.width;
-    const dy = touch.pageY - 0.5 * editorCanvas.height;
-    const inHook = dx ** 2 + dy ** 2 <= sliderHookRadius ** 2;
-    if ((touch.pageX >= sliderLeft && touch.pageX <= sliderRight) || inHook) {
-        editorState.sliding = true;
-        editorCanvas.style.cursor = "ew-resize";
-        slidingOffset = dx;
-    }
+    initSliding(evt.pageX, evt.pageY);
 }
 
 function tryMoveSlider(evt) {
-    const { sliding } = editorState;
-    if (!sliding) return;
-    editorState.slider = (evt.pageX - slidingOffset) / editorCanvas.width;
-}
-
-function tryMoveSliderMobile(evt) {
-    const { sliding } = editorState;
-    if (!sliding) return;
-    editorState.slider =
-        (evt.changedTouches[0].pageX - slidingOffset) / editorCanvas.width;
+    moveSlider(evt.pageX);
 }
 
 function endSliding(_evt) {
@@ -57,54 +42,66 @@ function endSliding(_evt) {
     slidingOffset = 0;
 }
 
-function startImagePanning(evt) {
-    // Don't pan if user is sliding
-    if (editorState.sliding) return;
-    editorState.panning = true;
-    editorState.pan.oldX = evt.pageX;
-    editorState.pan.oldY = evt.pageY;
+// MOBILE SLIDING
+function tryStartMovingSliderMobile(evt) {
+    const [{ pageX, pageY }] = evt.touches;
+    evt.stopPropagation();
+    initSliding(pageX, pageY);
 }
 
-function startImagePanningMobile(evt) {
-    // Don't pan if user is sliding
-    if (editorState.sliding) return;
-    editorState.panning = true;
-    editorState.pan.oldX = evt.touches[0].pageX;
-    editorState.pan.oldY = evt.touches[0].pageY;
+function tryMoveSliderMobile(evt) {
+    if (evt.changedTouches.length) {
+        moveSlider(evt.changedTouches[0].pageX);
+    }
 }
 
-function panImage(evt) {
+function initPanning(x, y) {
+    // Don't pan if user is sliding
+    if (editorState.sliding) return false;
+    editorState.panning = true;
+    editorState.pan.oldX = x;
+    editorState.pan.oldY = y;
+    return true;
+}
+
+function panEditor(x, y) {
     const { pan, panning, sliding } = editorState;
-    if (!panning) return;
+    if (!panning) return false;
     // Don't pan if user is sliding
-    if (sliding) return;
+    if (sliding) return false;
 
-    evt.preventDefault();
-    const dx = evt.pageX - pan.oldX;
-    const dy = evt.pageY - pan.oldY;
+    const dx = x - pan.oldX;
+    const dy = y - pan.oldY;
     pan.x += dx;
     pan.y += dy;
 
-    pan.oldX = evt.pageX;
-    pan.oldY = evt.pageY;
+    pan.oldX = x;
+    pan.oldY = y;
+    return true;
 }
 
-function panImageMobile(evt) {
-    const { pan, panning, sliding } = editorState;
-    if (!panning) return;
-    // Don't pan if user is sliding
-    if (sliding) return;
+// DESKTOP PANNING
+function tryStartPanning(evt) {
+    initPanning(evt.pageX, evt.pageY);
+}
 
+function tryPanEditor(evt) {
+    evt.preventDefault();
+    panEditor(evt.pageX, evt.pageY);
+}
+
+// MOBILE PANNING
+function tryStartPanningMobile(evt) {
+    const [{ pageX, pageY }] = evt.touches;
+    initPanning(pageX, pageY);
+}
+
+function tryPanEditorMobile(evt) {
+    if (!evt.changedTouches.length) return;
     evt.preventDefault();
 
-    const touch = evt.changedTouches[0];
-    const dx = touch.pageX - pan.oldX;
-    const dy = touch.pageY - pan.oldY;
-    pan.x += dx;
-    pan.y += dy;
-
-    pan.oldX = touch.pageX;
-    pan.oldY = touch.pageY;
+    const [{ pageX, pageY }] = evt.changedTouches;
+    panEditor(pageX, pageY);
 }
 
 function endImagePanning(_evt) {
@@ -112,15 +109,10 @@ function endImagePanning(_evt) {
     editorState.panning = false;
 }
 
-function handleEditorMouseWheel(evt) {
-    evt.preventDefault();
-
-    const oldScale = editorState.scale;
-
-    editorState.scale += evt.deltaY * -0.005;
+// DESKTOP ZOOM
+function zoomEditor(delta) {
+    editorState.scale += delta;
     editorState.scale = Math.min(Math.max(0.15, editorState.scale), 3);
-
-    const delta = editorState.scale - oldScale;
 
     EventEditorZoom.fire({
         pageX: evt.pageX,
@@ -130,7 +122,13 @@ function handleEditorMouseWheel(evt) {
     });
 }
 
-let fingersDistApart = 0;
+function tryZoomEditor(evt) {
+    evt.preventDefault();
+    zoomEditor(evt.deltaY * -0.005);
+}
+
+// MOBILE ZOOM
+let initialFingersDistApart = 0;
 let mobileZooming = false;
 function tryStartMobileZoom(evt) {
     if (!evt.touches || evt.touches.length != 2) return;
@@ -138,7 +136,7 @@ function tryStartMobileZoom(evt) {
     evt.preventDefault();
 
     const [a, b] = evt.touches;
-    fingersDistApart = Math.hypot(a.pageX - b.pageX, a.pageY - b.pageY);
+    initialFingersDistApart = Math.hypot(a.pageX - b.pageX, a.pageY - b.pageY);
     mobileZooming = true;
 }
 
@@ -152,28 +150,15 @@ function tryMobileZoom(evt) {
         a.pageX - b.pageX,
         a.pageY - b.pageY
     );
-    const changeFactor = curFingersDistApart / fingersDistApart;
-
+    const newScale = curFingersDistApart / initialFingersDistApart;
     const oldScale = editorState.scale;
-
-    editorState.scale += (changeFactor - oldScale) * 0.2;
-    editorState.scale = Math.min(Math.max(0.15, editorState.scale), 3);
-
-    const delta = editorState.scale - oldScale;
-
-    const midX = a.pageX + (b.pageX - a.pageX) / 2;
-    const midY = a.pageY + (b.pageY - a.pageY) / 2;
-    EventEditorZoom.fire({
-        pageX: midX,
-        pageY: midY,
-        scale: editorState.scale,
-        delta,
-    });
+    const delta = (newScale - oldScale) * 0.2;
+    zoomEditor(delta);
 }
 
 function endMobileZoom(_evt) {
     if (mobileZooming) {
         mobileZooming = false;
-        fingersDistApart = 0;
+        initialFingersDistApart = 0;
     }
 }

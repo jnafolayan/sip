@@ -55,15 +55,15 @@ function setup() {
 function setupEvents() {
     fileInput.addEventListener("change", handleImageUpload);
 
-    editorCanvas.addEventListener("wheel", handleEditorMouseWheel);
+    editorCanvas.addEventListener("wheel", tryZoomEditor);
     editorCanvas.addEventListener("touchstart", tryStartMobileZoom);
     editorCanvas.addEventListener("touchmove", tryMobileZoom);
     editorCanvas.addEventListener("touchend", endMobileZoom);
 
-    editorCanvas.addEventListener("mousedown", startImagePanning);
-    editorCanvas.addEventListener("touchstart", startImagePanningMobile);
-    editorCanvas.addEventListener("mousemove", panImage);
-    editorCanvas.addEventListener("touchmove", panImageMobile);
+    editorCanvas.addEventListener("mousedown", tryStartPanning);
+    editorCanvas.addEventListener("touchstart", tryStartPanningMobile);
+    editorCanvas.addEventListener("mousemove", tryPanEditor);
+    editorCanvas.addEventListener("touchmove", tryPanEditorMobile);
     editorCanvas.addEventListener("mouseup", endImagePanning);
     editorCanvas.addEventListener("mouseout", endImagePanning);
     editorCanvas.addEventListener("touchend", endImagePanning);

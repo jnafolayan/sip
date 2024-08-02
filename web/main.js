@@ -1,3 +1,5 @@
+const VERSION = "0.1";
+
 let uploadButton, fileInput, uploadProgress;
 let compressButton, downloadButton, backButton;
 
@@ -23,6 +25,8 @@ let DEBUG = "";
 window.onload = setup;
 
 function setup() {
+    console.log(`Sip v${VERSION}.`);
+
     uploadButton = document.getElementById("uploadButton");
     uploadProgress = document.getElementById("uploadProgress");
     fileInput = document.getElementById("imageUpload");

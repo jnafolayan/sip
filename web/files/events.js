@@ -16,12 +16,13 @@ function handleImageUpload(evt) {
     const image = new Image();
     image.onload = () => {
         EventFileUploadEnd.fire({ progress: 1 });
+        const imgCanvas = image2Canvas(image);
         appState.source = {
-            image,
-            width: image.naturalWidth,
-            height: image.naturalHeight,
-            size: file.size,
+            image: imgCanvas,
+            width: image.width,
+            height: image.height,
             name: file.name,
+            size: file.size,
         };
     };
 

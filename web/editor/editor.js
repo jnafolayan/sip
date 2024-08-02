@@ -44,7 +44,7 @@ function createDummyImage(color) {
     ctx.fillRect(0, 0, image.width, image.height);
     const step = 50;
     for (let i = 0; i < image.width; i += step) {
-        ctx.fillStyle = `hsl(${Math.floor(Math.random()*360)}, 100%, 40%)`;
+        ctx.fillStyle = `hsl(${Math.floor(Math.random() * 360)}, 100%, 40%)`;
         ctx.fillRect(i, 0, step, image.height);
     }
     return image;
@@ -67,7 +67,7 @@ function editorFrame() {
     ctx.save();
     ctx.translate(halfWidth + pan.x, halfHeight + pan.y);
     ctx.scale(scale, scale);
-    
+
     // Always render the full width original image
     ctx.drawImage(
         source.image,
@@ -151,12 +151,11 @@ function applyImageZoom({ pageX, pageY, scale, delta }) {
 }
 
 function downloadCompressedImage() {
-    const {compressed, source} = appState;
+    const { compressed, source } = appState;
     if (!compressed || !source) return;
 
-    const url = compressed.url || compressed.image.toDataURL("image/jpeg");
+    const { file, objectURL } = compressed;
     const link = document.createElement("a");
-    link.download = `${source.name || "sip"}-compressed.jpeg`;
-    link.href = url;
+    link.href = objectURL;
     link.click();
 }

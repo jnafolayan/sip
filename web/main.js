@@ -1,4 +1,4 @@
-const VERSION = "0.1";
+const VERSION = "0.2";
 
 let uploadButton, fileInput, uploadProgress;
 let compressButton, downloadButton, backButton;

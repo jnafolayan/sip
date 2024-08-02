@@ -68,12 +68,11 @@ func (cdf *CDF97Wavelet) Reconstruct(s signal.Signal2D, width, height int) signa
 	}
 
 	// Write tempBank to s
-	// for y := 0; y < width; y++ {
-	// 	for x := 0; x < height; x++ {
-	// 		s[y][x] = tempBank[y][x]
-	// 	}
-	// }
-	s = tempBank
+	for y := 0; y < width; y++ {
+		for x := 0; x < height; x++ {
+			s[y][x] = tempBank[y][x]
+		}
+	}
 
 	// Do the 1D transform on all cols
 	for x := 0; x < width; x++ {

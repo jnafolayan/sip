@@ -117,14 +117,13 @@ function zoomEditor(delta) {
     EventEditorZoom.fire({
         pageX: evt.pageX,
         pageY: evt.pageY,
-        scale: editorState.scale,
         delta,
     });
 }
 
 function tryZoomEditor(evt) {
     evt.preventDefault();
-    zoomEditor(evt.deltaY * -0.005);
+    zoomEditor(evt.deltaY * -0.005, evt.pageX, evt.pageY);
 }
 
 // MOBILE ZOOM
@@ -153,7 +152,10 @@ function tryMobileZoom(evt) {
     const newScale = curFingersDistApart / initialFingersDistApart;
     const oldScale = editorState.scale;
     const delta = (newScale - oldScale) * 0.2;
-    zoomEditor(delta);
+
+    const midX = a.pageX + (b.pageX - a.pageX) / 2;
+    const midY = a.pageY + (b.pageY - a.pageY) / 2;
+    zoomEditor(delta, midX, midY);
 }
 
 function endMobileZoom(_evt) {

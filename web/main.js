@@ -10,7 +10,7 @@ let psnrElement, ratioElement;
 
 // STATE
 let appState = createAppState();
-let DEBUG = "editor";
+let DEBUG = "";
 
 window.onload = setup;
 

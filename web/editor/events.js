@@ -110,13 +110,13 @@ function endImagePanning(_evt) {
 }
 
 // DESKTOP ZOOM
-function zoomEditor(delta) {
+function zoomEditor(delta, pageX, pageY) {
     editorState.scale += delta;
     editorState.scale = Math.min(Math.max(0.15, editorState.scale), 3);
 
     EventEditorZoom.fire({
-        pageX: evt.pageX,
-        pageY: evt.pageY,
+        pageX,
+        pageY,
         delta,
     });
 }

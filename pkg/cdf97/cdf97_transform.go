@@ -56,9 +56,9 @@ func (cdf *CDF97Wavelet) Decompose(s signal.Signal2D, width, height int) signal.
 		k2 signal.SignalCoeff = 0.61508705245700002 // 1.230174104914/2
 	)
 
-	// if width < 2 || height < 2 {
-	// 	return s
-	// }
+	if width < 2 || height < 2 {
+		return s
+	}
 
 	h1 := height - 1
 	if h1 < 0 {
@@ -110,12 +110,12 @@ func (cdf *CDF97Wavelet) Decompose(s signal.Signal2D, width, height int) signal.
 		}
 	}
 
-	// // Write tempBank to s
-	// for y := 0; y < width; y++ {
-	// 	for x := 0; x < height; x++ {
-	// 		s[y][x] = tempBank[y][x]
-	// 	}
-	// }
+	// Write tempBank to s
+	for y := 0; y < width; y++ {
+		for x := 0; x < height; x++ {
+			s[y][x] = tempBank[y][x]
+		}
+	}
 
-	return tempBank
+	return s
 }

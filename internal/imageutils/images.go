@@ -33,7 +33,7 @@ func SaveImage(dest string, img image.Image) error {
 	}
 	defer f.Close()
 
-	return jpeg.Encode(f, img, &jpeg.Options{Quality: 75})
+	return jpeg.Encode(f, img, nil)
 }
 
 func Grayscale(img image.Image) [][]SignalCoeff {
@@ -107,6 +107,8 @@ func ConvertImageDataToImage(imageData []uint8, width, height int) image.Image {
 		g = imageData[i+1]
 		b = imageData[i+2]
 		a = imageData[i+3]
+		x = (i / 4) % width
+		y = (i / 4) / width
 		img.Set(x, y, color.RGBA{r, g, b, a})
 	}
 

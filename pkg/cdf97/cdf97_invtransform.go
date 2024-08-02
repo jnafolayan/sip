@@ -43,9 +43,9 @@ func (cdf *CDF97Wavelet) Reconstruct(s signal.Signal2D, width, height int) signa
 		k2 signal.SignalCoeff = 1.6257861322319229
 	)
 
-	// if width < 2 || height < 2 {
-	// 	return s
-	// }
+	if width < 2 || height < 2 {
+		return s
+	}
 
 	h1 := height - 1
 	if h1 < 0 {

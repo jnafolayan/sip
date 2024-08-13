@@ -15,6 +15,8 @@ const editorState = {
     sliding: false,
     sliderWidth: 10,
     sliderHookRadius: 20,
+    sliderColor: "rgba(25,25,25,1)",
+    sliderBorder: "rgba(25,25,25,1)",
 };
 
 let editorRAF;
@@ -33,9 +35,23 @@ function setupEditor() {
         compressSourceImage();
     }
 
-    editorState.pan.x = -appState.source.width / 2;
-    editorState.pan.y = -appState.source.height / 2;
-    editorState.scale = 1;
+    const initialWidth = editorCanvas.width * 0.8;
+    const initialHeight = editorCanvas.height * 0.8;
+    const initialScale =
+        1 /
+        Math.max(
+            appState.source.width / initialWidth,
+            appState.source.height / initialHeight
+        );
+    editorState.pan.x = -appState.source.width * initialScale * 0.5;
+    editorState.pan.y = -appState.source.height * initialScale * 0.5;
+    editorState.scale = initialScale;
+    const g = Math.floor(
+        0.7 * (255 - getAverageGrayscaleColor(appState.source.image))
+    );
+    const b = 255 - g;
+    editorState.sliderColor = `rgba(${g}, ${g}, ${g}, 1)`;
+    editorState.sliderBorder = `rgba(${b}, ${b}, ${b}, 0.3)`;
 
     editorRAF = requestAnimationFrame(editorFrame);
 }
@@ -102,15 +118,21 @@ function editorFrame() {
     ctx.restore();
 
     // slider width
-    ctx.fillStyle = "rgba(40,40,40,.9)";
+    ctx.fillStyle = editorState.sliderColor;
+    ctx.strokeStyle = editorState.sliderBorder;
     const k = mapRange(slider, 0, 1, 0, editorCanvas.width);
     ctx.fillRect(k - sliderWidth / 2, 0, sliderWidth, editorCanvas.height);
+    ctx.strokeRect(k - sliderWidth / 2, -1, sliderWidth, editorCanvas.height+2);
 
     // Slider hook
+    ctx.strokeStyle = editorState.sliderColor;
     ctx.fillStyle = "#000";
     ctx.beginPath();
     ctx.arc(k, halfHeight, sliderHookRadius, 0, 2 * Math.PI);
     ctx.fill();
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    ctx.lineWidth = 1;
 
     // Slider left triangle
     const triW = 10;
@@ -134,6 +156,16 @@ function editorFrame() {
     ctx.fill();
 
     editorRAF = requestAnimationFrame(editorFrame);
+}
+
+function getAverageGrayscaleColor(image) {
+    const ctx = image.getContext("2d");
+    const data = ctx.getImageData(0, 0, image.width, image.height).data;
+    let grayscale = 0;
+    for (let i = 0; i < data.length; i += 4) {
+        grayscale += (data[i + 0] + data[i + 1] + data[i + 2]) / 3;
+    }
+    return grayscale / (image.width * image.height);
 }
 
 function applyEditorZoom({ pageX, pageY, delta }) {

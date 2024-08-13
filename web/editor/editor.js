@@ -13,8 +13,8 @@ const editorState = {
     },
     slider: 0.5,
     sliding: false,
-    sliderWidth: 10,
-    sliderHookRadius: 20,
+    sliderWidth: 6,
+    sliderHookRadius: 18,
     sliderColor: "rgba(25,25,25,1)",
     sliderBorder: "rgba(25,25,25,1)",
 };
@@ -47,7 +47,7 @@ function setupEditor() {
     editorState.pan.y = -appState.source.height * initialScale * 0.5;
     editorState.scale = initialScale;
     const g = Math.floor(
-        0.7 * (255 - getAverageGrayscaleColor(appState.source.image))
+        0.85 * (255 - getAverageGrayscaleColor(appState.source.image))
     );
     const b = 255 - g;
     editorState.sliderColor = `rgba(${g}, ${g}, ${g}, 1)`;
@@ -124,36 +124,30 @@ function editorFrame() {
     ctx.fillRect(k - sliderWidth / 2, 0, sliderWidth, editorCanvas.height);
     ctx.strokeRect(k - sliderWidth / 2, -1, sliderWidth, editorCanvas.height+2);
 
-    // Slider hook
-    ctx.strokeStyle = editorState.sliderColor;
-    ctx.fillStyle = "#000";
-    ctx.beginPath();
-    ctx.arc(k, halfHeight, sliderHookRadius, 0, 2 * Math.PI);
-    ctx.fill();
-    ctx.lineWidth = 2;
-    ctx.stroke();
-    ctx.lineWidth = 1;
-
     // Slider left triangle
-    const triW = 10;
-    const triH = 20;
-    const gap = 4;
+    const triW = editorState.sliderHookRadius * 1;
+    const triH = editorState.sliderHookRadius * 1.5;
+    const gap = editorState.sliderWidth * 0;
     ctx.beginPath();
-    ctx.moveTo(k - gap, halfHeight - triH / 2);
-    ctx.lineTo(k - gap - triW, halfHeight);
-    ctx.lineTo(k - gap, halfHeight + triH / 2);
+    ctx.moveTo(k - gap * 0.5, halfHeight - triH / 2);
+    ctx.lineTo(k - gap * 0.5 - triW, halfHeight);
+    ctx.lineTo(k - gap * 0.5, halfHeight + triH / 2);
     ctx.closePath();
     ctx.fillStyle = "hsl(20, 100%, 55%)";
+    ctx.strokeStyle = "#000";
     ctx.fill();
+    ctx.stroke();
 
     // Slider right triangle
     ctx.beginPath();
-    ctx.moveTo(k + gap, halfHeight - triH / 2);
-    ctx.lineTo(k + gap + triW, halfHeight);
-    ctx.lineTo(k + gap, halfHeight + triH / 2);
+    ctx.moveTo(k + gap * 0.5, halfHeight - triH / 2);
+    ctx.lineTo(k + gap * 0.5 + triW, halfHeight);
+    ctx.lineTo(k + gap * 0.5, halfHeight + triH / 2);
     ctx.closePath();
     ctx.fillStyle = "hsl(200, 100%, 55%)";
+    ctx.strokeStyle = "#000";
     ctx.fill();
+    ctx.stroke();
 
     editorRAF = requestAnimationFrame(editorFrame);
 }

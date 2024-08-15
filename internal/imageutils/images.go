@@ -33,7 +33,7 @@ func SaveImage(dest string, img image.Image) error {
 	}
 	defer f.Close()
 
-	return jpeg.Encode(f, img, nil)
+	return jpeg.Encode(f, img, &jpeg.Options{Quality: 75})
 }
 
 func Grayscale(img image.Image) [][]SignalCoeff {

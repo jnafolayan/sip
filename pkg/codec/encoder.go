@@ -177,7 +177,7 @@ func reconstructImage(channels []signal.Signal2D, src image.Image) image.Image {
 		for x := 0; x < width; x++ {
 			r, g, b = color.YCbCrToRGB(uint8(Y[y][x]), uint8(Cb[y][x]), uint8(Cr[y][x]))
 			_, _, _, alpha = src.At(x, y).RGBA()
-			c = color.RGBA{r, g, b, uint8(alpha)}
+			c = color.RGBA{r, g, b, uint8(alpha >> 8)}
 			img.Set(x, y, c)
 		}
 	}

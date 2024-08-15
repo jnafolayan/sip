@@ -61,7 +61,7 @@ func Encode(img image.Image, opts CodecOptions) (image.Image, CompressionResult)
 	imageChannels := getImageChannels(img)
 
 	channels := imageChannels
-	channels = transformChannels(w, opts.ThresholdingFactor, channels)
+	channels = transformChannels(w, opts, channels)
 
 	// Inverse transform
 	channels = inverseTransformChannels(w, channels)
@@ -86,7 +86,7 @@ func EncodeImageData(imageData []uint8, width, height int, opts CodecOptions) ([
 	imageChannels := getImageChannelsFromImageData(imageData, width, height)
 
 	channels := imageChannels
-	channels = transformChannels(w, opts.ThresholdingFactor, channels)
+	channels = transformChannels(w, opts, channels)
 
 	// Inverse transform
 	channels = inverseTransformChannels(w, channels)
@@ -106,7 +106,7 @@ func EncodeImageData(imageData []uint8, width, height int, opts CodecOptions) ([
 	return reconstructed, result
 }
 
-func transformChannels(w wavelet.Wavelet, threshold int, channels []signal.Signal2D) []signal.Signal2D {
+func transformChannels(w wavelet.Wavelet, opts CodecOptions, channels []signal.Signal2D) []signal.Signal2D {
 	wg := sync.WaitGroup{}
 	wg.Add(len(channels))
 
@@ -117,8 +117,12 @@ func transformChannels(w wavelet.Wavelet, threshold int, channels []signal.Signa
 			// Apply wavelet transform on the channels
 			transformed := w.Transform(c)
 			// Hard thresholding
-			coeffs := w.HardThreshold(transformed, threshold)
-			transformedChannels[i] = coeffs
+			if opts.ThresholdingStrategy == "soft" {
+				transformed = transformed.SoftThreshold(0, 0, opts.ThresholdingFactor)
+			} else if opts.ThresholdingStrategy == "hard" {
+				transformed = transformed.HardThreshold(0, 0, opts.ThresholdingFactor)
+			}
+			transformedChannels[i] = transformed
 			wg.Done()
 		}()
 	}

@@ -59,6 +59,7 @@ var compressCmd = &cli.Command{
 		}
 
 		fmt.Println("PSNR:", result.PSNR)
+		fmt.Println("SSIM:", result.SSIM)
 		fmt.Println("Ratio:", result.Ratio)
 
 		return nil

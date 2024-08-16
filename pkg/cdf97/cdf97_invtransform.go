@@ -10,21 +10,19 @@ func (cdf *CDF97Wavelet) InverseTransform(s signal.Signal2D) signal.Signal2D {
 
 	// fmt.Println(result.String(result.Bounds()) + "\n")
 	// Find starting size of m:
-	for i := 0; i < cdf.Level-1; i++ {
-		height /= 2
-		width /= 2
-	}
+	width >>= cdf.Level - 1
+	height >>= cdf.Level - 1
 
 	for level := 0; level < cdf.Level; level++ {
 		// Rows
-		transposeInPlace(result)
-		result = cdf.Reconstruct(result, height, width)
+		// transposeInPlace(result)
+		result = cdf.Reconstruct(result, width, height)
 		// Cols
-		transposeInPlace(result)
+		// transposeInPlace(result)
 		result = cdf.Reconstruct(result, width, height)
 
-		height *= 2
 		width *= 2
+		height *= 2
 	}
 
 	return result

@@ -31,10 +31,10 @@ func (cdf *CDF97Wavelet) Transform(s signal.Signal2D) signal.Signal2D {
 	for level := 0; level < cdf.Level; level++ {
 		// Cols
 		result = cdf.Decompose(result, width, height)
-		transposeInPlace(result)
+		// transposeInPlace(result)
 		// Rows
-		result = cdf.Decompose(result, height, width)
-		transposeInPlace(result)
+		result = cdf.Decompose(result, width, height)
+		// transposeInPlace(result)
 
 		width /= 2
 		height /= 2

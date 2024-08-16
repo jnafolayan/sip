@@ -163,7 +163,7 @@ func (e *Encoder) checkIsZerotree(coeff FlatSignalCoeff) bool {
 	w, h := e.signal.Size()
 	row, col := coeff.Row, coeff.Col
 
-	if e.signal[row][col] >= float64(e.threshold) {
+	if math.Abs(e.signal[row][col]) >= float64(e.threshold) {
 		return false
 	}
 

@@ -45,7 +45,8 @@ func EncodeAsJPEG(img image.Image, dest string, opts CodecOptions) (CompressionR
 
 	start := time.Now()
 	compressedImageData, result := EncodeImageData(imageData, width, height, opts)
-	fmt.Printf("took %fs\n", time.Since(start).Seconds())
+	result.Time = time.Since(start).Seconds()
+	fmt.Printf("took %fs\n", result.Time)
 
 	compressed := imageutils.ConvertImageDataToImage(compressedImageData, width, height)
 	err := imageutils.SaveImage(dest, compressed)
@@ -118,9 +119,9 @@ func transformChannels(w wavelet.Wavelet, opts CodecOptions, channels []signal.S
 			transformed := w.Transform(c)
 			// Hard thresholding
 			if opts.ThresholdingStrategy == "soft" {
-				transformed = transformed.SoftThreshold(0, 0, opts.ThresholdingFactor)
+				transformed = w.SoftThreshold(transformed, opts.ThresholdingFactor)
 			} else if opts.ThresholdingStrategy == "hard" {
-				transformed = transformed.HardThreshold(0, 0, opts.ThresholdingFactor)
+				transformed = w.HardThreshold(transformed, opts.ThresholdingFactor)
 			}
 			transformedChannels[i] = transformed
 			wg.Done()

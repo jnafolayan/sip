@@ -21,7 +21,7 @@ func TestHaarTransform(t *testing.T) {
 		{
 			2,
 			signal.Signal2D{{3, 5, 4, 8}},
-			signal.Signal2D{{5, -1, -1, -2}, {0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}},
+			signal.Signal2D{{5, -1, -1, -2}, {0, 0, -1, -2}, {0, 0, 0, 0}, {0, 0, 0, 0}},
 		},
 	}
 

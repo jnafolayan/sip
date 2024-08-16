@@ -30,7 +30,8 @@ func jsCompressImage(this js.Value, args []js.Value) interface{} {
 
 	start := time.Now()
 	compressed, result := codec.EncodeImageData(imageData, width, height, codecOpts)
-	fmt.Printf("took %fs\n", time.Since(start).Seconds())
+	result.Time = time.Since(start).Seconds()
+	fmt.Printf("took %fs\n", result.Time)
 
 	safeCompressed := js.Global().Get("Uint8Array").New(len(compressed))
 	js.CopyBytesToJS(safeCompressed, compressed)

@@ -5,9 +5,10 @@ import (
 )
 
 type CompressionResult struct {
-	Ratio float64
-	PSNR  float64
-	SSIM  float64
+	Ratio float64 `json:"Ratio"`
+	PSNR  float64 `json:"PSNR"`
+	SSIM  float64 `json:"SSIM"`
+	Time  float64 `json:"Time"`
 }
 
 func computeCompressionResult(img1, img2 image.Image) CompressionResult {

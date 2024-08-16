@@ -12,6 +12,7 @@ var rootCmd = &cli.Command{
 
 func init() {
 	rootCmd.RegisterCmd(compressCmd)
+	rootCmd.RegisterCmd(bulkCompressCmd)
 }
 
 func Execute() error {

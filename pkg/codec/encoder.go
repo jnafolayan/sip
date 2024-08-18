@@ -46,7 +46,6 @@ func EncodeAsJPEG(img image.Image, dest string, opts CodecOptions) (CompressionR
 	start := time.Now()
 	compressedImageData, result := EncodeImageData(imageData, width, height, opts)
 	result.Time = time.Since(start).Seconds()
-	fmt.Printf("took %fs\n", result.Time)
 
 	compressed := imageutils.ConvertImageDataToImage(compressedImageData, width, height)
 	err := imageutils.SaveImage(dest, compressed)

@@ -30,6 +30,8 @@ async function handleWorkerMessage(e) {
         ratioElement.innerText = result.Ratio.toFixed(1);
         psnrElement.innerText = result.PSNR.toFixed(2);
 
+        console.log(`Took ${result.Time}s to compress.`);
+
         if (
             appState.compressed != null &&
             appState.compressed.downloadURL != ""

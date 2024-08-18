@@ -38,13 +38,13 @@ var bulkCompressCmd = &cli.Command{
 
 		rows := map[string]codec.CompressionResult{}
 
-		os.RemoveAll("resources/dump/")
-		os.Mkdir("resources/dump", 0777)
+		os.RemoveAll("dump/")
+		os.Mkdir("dump", 0777)
 
 		for level := 1; level <= 6; level += 2 {
 			for _, thresh := range thresholds {
 				for _, wave := range wavelets {
-					dest := fmt.Sprintf("resources/dump/%dL_%dT_%sW.jpg", level, thresh, wave)
+					dest := fmt.Sprintf("dump/%dL_%dT_%sW.jpg", level, thresh, wave)
 					fmt.Printf("Compressing %s\n", dest)
 					result, err := codec.EncodeFileAsJPEG(src, dest, codec.CodecOptions{
 						Wavelet:              wavelet.WaveletType(wave),
@@ -60,7 +60,7 @@ var bulkCompressCmd = &cli.Command{
 			}
 		}
 
-		f, err := os.Create("resources/dump/bulk.json")
+		f, err := os.Create("dump/bulk.json")
 		if err != nil {
 			return err
 		}

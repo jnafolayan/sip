@@ -88,9 +88,11 @@ func EncodeImageData(imageData []uint8, width, height int, opts CodecOptions) ([
 
 	channels := imageChannels
 	channels = transformChannels(w, opts, channels)
+	// debug.DrawSignal2D(imageChannels[0], image.Rect(50, 150, 60, 160), "original_Y.jpg")
 
 	// Inverse transform
 	channels = inverseTransformChannels(w, channels)
+	// debug.DrawSignal2D(channels[0], image.Rect(50, 150, 60, 160), "transformed_Y.jpg")
 
 	// Remove padding that might be added during the transform stage
 	channels = trimFatChannels(channels, width, height)

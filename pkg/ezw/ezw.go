@@ -22,3 +22,9 @@ var SymbolCodes = map[SymbolType]uint8{
 	SymbolHigh: 0b11110,
 	SymbolIZ:   0b11111,
 }
+
+const (
+	StartOfImageMarker   = 0b10000000
+	StartOfChannelMarker = 0b01000000
+	EndOfImageMarker     = 0b11000000
+)

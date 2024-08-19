@@ -14,6 +14,7 @@ import (
 type FlatSignalCoeff struct {
 	Row, Col int
 	Value    signal.SignalCoeff
+	Deleted  bool
 }
 
 type SignificantCoeff struct {
@@ -79,8 +80,8 @@ func (e *Encoder) encodeCoefficient(coeff SignificantCoeff) []byte {
 	binary.Write(buf, binary.BigEndian, colBits)
 
 	// Encode the value
-	valueBits := float64(coeff.Value)
-	binary.Write(buf, binary.BigEndian, valueBits)
+	// valueBits := float64(coeff.Value)
+	// binary.Write(buf, binary.BigEndian, valueBits)
 
 	return buf.Bytes()
 }
@@ -110,6 +111,9 @@ func (e *Encoder) SignificancePass() {
 	T := float64(e.threshold)
 
 	for coeffIndex, coeff := range e.dominantList {
+		if coeff.Deleted {
+			continue
+		}
 		sCoeff := SignificantCoeff{
 			FlatSignalCoeff: coeff,
 			Symbol:          SymbolNone,
@@ -139,7 +143,8 @@ func (e *Encoder) SignificancePass() {
 
 	// Delete coeffs that were added to the subordinate list
 	for _, idx := range markedForDeletion {
-		e.dominantList = append(e.dominantList[:idx], e.dominantList[idx+1:]...)
+		e.dominantList[idx].Deleted = true
+		// e.dominantList = append(e.dominantList[:idx], e.dominantList[idx+1:]...)
 	}
 }
 

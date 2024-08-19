@@ -9,8 +9,6 @@ import (
 	"time"
 
 	"github.com/jnafolayan/sip/internal/imageutils"
-	"github.com/jnafolayan/sip/pkg/cdf97"
-	"github.com/jnafolayan/sip/pkg/haar"
 	"github.com/jnafolayan/sip/pkg/signal"
 	"github.com/jnafolayan/sip/pkg/wavelet"
 )
@@ -56,8 +54,8 @@ func EncodeAsJPEG(img image.Image, dest string, opts CodecOptions) (CompressionR
 }
 
 func Encode(img image.Image, opts CodecOptions) (image.Image, CompressionResult) {
-	w, _ := getWaveletFamily(opts.Wavelet, opts)
-	imageChannels := getImageChannels(img)
+	w, _ := GetWaveletFamily(opts)
+	imageChannels := imageutils.GetImageChannels(img)
 
 	channels := imageChannels
 	channels = transformChannels(w, opts, channels)
@@ -81,8 +79,8 @@ func Encode(img image.Image, opts CodecOptions) (image.Image, CompressionResult)
 }
 
 func EncodeImageData(imageData []uint8, width, height int, opts CodecOptions) ([]uint8, CompressionResult) {
-	w, _ := getWaveletFamily(opts.Wavelet, opts)
-	imageChannels := getImageChannelsFromImageData(imageData, width, height)
+	w, _ := GetWaveletFamily(opts)
+	imageChannels := imageutils.GetImageChannelsFromImageData(imageData, width, height)
 
 	channels := imageChannels
 	channels = transformChannels(w, opts, channels)
@@ -248,46 +246,4 @@ func reconstructImageData(channels []signal.Signal2D, original []uint8, out []ui
 	}
 
 	return out
-}
-
-func getWaveletFamily(wType wavelet.WaveletType, opts CodecOptions) (wavelet.Wavelet, error) {
-	// Get wavelet family
-	var w wavelet.Wavelet
-	switch wType {
-	case wavelet.WaveletHaar:
-		w = &haar.HaarWavelet{Level: opts.DecompositionLevel}
-	case wavelet.WaveletCDF97:
-		w = &cdf97.CDF97Wavelet{Level: opts.DecompositionLevel}
-	default:
-		return nil, fmt.Errorf("unrecognized wavelet: %s", wType)
-	}
-	return w, nil
-}
-
-// // createEncoders creates and initialized EZW encoders for each
-// // channel in an image.
-// // Currently there are 3 channels: Y, Cb and Cr, adopting the YCbCr
-// // color model.
-// func createEncoders(channels []signal.Signal2D, opts CodecOptions) []*ezw.Encoder {
-// 	encoders := make([]*ezw.Encoder, len(channels))
-
-// 	for i := range channels {
-// 		e := ezw.NewEncoder()
-// 		e.Init(channels[i], opts.DecompositionLevel)
-// 		encoders[i] = e
-// 	}
-
-// 	return encoders
-// }
-
-func getImageChannels(img image.Image) []signal.Signal2D {
-	Y, Cb, Cr := imageutils.ExtractYCbCrComponents(img)
-	channels := []signal.Signal2D{Y, Cb, Cr}
-	return channels
-}
-
-func getImageChannelsFromImageData(imageData []uint8, width, height int) []signal.Signal2D {
-	Y, Cb, Cr := imageutils.ExtractYCbCrComponentsFromImageData(imageData, width, height)
-	channels := []signal.Signal2D{Y, Cb, Cr}
-	return channels
 }

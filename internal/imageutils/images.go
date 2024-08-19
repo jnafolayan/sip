@@ -169,3 +169,15 @@ func ExtractYCbCrComponentsFromImageData(imageData []uint8, width, height int) (
 
 	return Y, Cb, Cr
 }
+
+func GetImageChannelsFromImageData(imageData []uint8, width, height int) []signal.Signal2D {
+	Y, Cb, Cr := ExtractYCbCrComponentsFromImageData(imageData, width, height)
+	channels := []signal.Signal2D{Y, Cb, Cr}
+	return channels
+}
+
+func GetImageChannels(img image.Image) []signal.Signal2D {
+	Y, Cb, Cr := ExtractYCbCrComponents(img)
+	channels := []signal.Signal2D{Y, Cb, Cr}
+	return channels
+}

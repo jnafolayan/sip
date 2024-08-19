@@ -22,12 +22,25 @@ func streamView(win fyne.Window, uri fyne.URI, codecOpts codec.CodecOptions) *fy
 	img.SetMinSize(img.Size())
 
 	encoder := ezw.NewImageEncoder(codecOpts)
+	decooder := ezw.NewImageDecoder(encoder.SrcSize(), codecOpts)
 	stepButton := widget.NewButtonWithIcon("Step", theme.ViewRefreshIcon(), func() {
 		buf := new(bytes.Buffer)
-		encoder.Tick(buf)
+		err := encoder.Tick(buf)
+		if err != nil {
+			dialog.ShowError(err, win)
+			return
+		}
+
 		fmt.Println(buf.Len())
+		channels, err := decooder.DecodeFrame(buf)
+		if err != nil {
+			dialog.ShowError(err, win)
+			buf.Reset()
+			return
+		}
 
 		buf.Reset()
+		fmt.Println(channels)
 	})
 	stepButton.Resize(fyne.NewSize(100, 40))
 	stepButton.Disable()

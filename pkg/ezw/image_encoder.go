@@ -1,7 +1,9 @@
 package ezw
 
 import (
+	"encoding/binary"
 	"fmt"
+	"image"
 	"io"
 	"sync"
 
@@ -12,8 +14,13 @@ import (
 )
 
 type ImageEncoder struct {
-	encoders     []*Encoder
-	wavelet      wavelet.Wavelet
+	encoders []*Encoder
+	wavelet  wavelet.Wavelet
+
+	srcWidth     int
+	srcHeight    int
+	frameWidth   int
+	frameHeight  int
 	codecOptions codec.CodecOptions
 }
 
@@ -31,18 +38,28 @@ func (ie *ImageEncoder) Init(src string) error {
 	ie.wavelet = w
 
 	channels := getImageChannels(src)
-	channels = transformChannels(w, channels, ie.codecOptions)
+	transformed := transformChannels(w, channels, ie.codecOptions)
 	encoders := createEncoders(channels, ie.codecOptions)
 	ie.encoders = encoders
+
+	ie.srcWidth, ie.srcHeight = channels[0].Size()
+	ie.frameWidth, ie.frameHeight = transformed[0].Size()
 
 	return nil
 }
 
+func (ie *ImageEncoder) SrcSize() image.Rectangle {
+	return image.Rect(0, 0, ie.srcWidth, ie.srcHeight)
+}
+
 func (ie *ImageEncoder) Tick(w io.Writer) error {
-	w.Write([]byte{StartOfImageMarker})
+	binary.Write(w, binary.BigEndian, StartOfImageMarker)
+	binary.Write(w, binary.BigEndian, uint16(ie.frameWidth))
+	binary.Write(w, binary.BigEndian, uint16(ie.frameHeight))
 
 	for _, e := range ie.encoders {
-		w.Write([]byte{StartOfChannelMarker})
+		binary.Write(w, binary.BigEndian, StartOfChannelMarker)
+		binary.Write(w, binary.BigEndian, uint8(e.threshold))
 
 		err := e.Next()
 		if err != nil {
@@ -52,7 +69,7 @@ func (ie *ImageEncoder) Tick(w io.Writer) error {
 		e.Flush(w)
 	}
 
-	w.Write([]byte{EndOfImageMarker})
+	binary.Write(w, binary.BigEndian, EndOfImageMarker)
 
 	return nil
 }

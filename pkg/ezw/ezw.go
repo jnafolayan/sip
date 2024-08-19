@@ -24,7 +24,7 @@ var SymbolCodes = map[SymbolType]uint8{
 }
 
 const (
-	StartOfImageMarker   = 0b10000000
-	StartOfChannelMarker = 0b01000000
-	EndOfImageMarker     = 0b11000000
+	StartOfImageMarker   uint8 = 0b10000000
+	StartOfChannelMarker uint8 = 0b01000000
+	EndOfImageMarker     uint8 = 0b11000000
 )

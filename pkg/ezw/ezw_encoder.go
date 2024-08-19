@@ -71,13 +71,13 @@ func (e *Encoder) encodeCoefficient(coeff SignificantCoeff) []byte {
 
 	// Encode symbol
 	symbolBits := SymbolCodes[coeff.Symbol]
-	buf.WriteByte(symbolBits)
+	binary.Write(buf, binary.BigEndian, symbolBits)
 
 	// Encode row and col indices
-	rowBits := uint16(coeff.Row)
-	colBits := uint16(coeff.Col)
-	binary.Write(buf, binary.BigEndian, rowBits)
-	binary.Write(buf, binary.BigEndian, colBits)
+	row := uint16(coeff.Row)
+	col := uint16(coeff.Col)
+	binary.Write(buf, binary.BigEndian, row)
+	binary.Write(buf, binary.BigEndian, col)
 
 	// Encode the value
 	// valueBits := float64(coeff.Value)
@@ -124,7 +124,8 @@ func (e *Encoder) SignificancePass() {
 			} else {
 				sCoeff.Symbol = SymbolNG
 			}
-			e.write(sCoeff)
+			// TODO: should it be written?
+			// e.write(sCoeff)
 			e.subordinateList = append(e.subordinateList, sCoeff)
 			markedForDeletion = append(markedForDeletion, coeffIndex)
 		} else {

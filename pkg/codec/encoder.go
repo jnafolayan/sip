@@ -10,7 +10,6 @@ import (
 
 	"github.com/jnafolayan/sip/internal/imageutils"
 	"github.com/jnafolayan/sip/pkg/cdf97"
-	"github.com/jnafolayan/sip/pkg/ezw"
 	"github.com/jnafolayan/sip/pkg/haar"
 	"github.com/jnafolayan/sip/pkg/signal"
 	"github.com/jnafolayan/sip/pkg/wavelet"
@@ -265,21 +264,21 @@ func getWaveletFamily(wType wavelet.WaveletType, opts CodecOptions) (wavelet.Wav
 	return w, nil
 }
 
-// createEncoders creates and initialized EZW encoders for each
-// channel in an image.
-// Currently there are 3 channels: Y, Cb and Cr, adopting the YCbCr
-// color model.
-func createEncoders(channels []signal.Signal2D, opts CodecOptions) []*ezw.Encoder {
-	encoders := make([]*ezw.Encoder, len(channels))
+// // createEncoders creates and initialized EZW encoders for each
+// // channel in an image.
+// // Currently there are 3 channels: Y, Cb and Cr, adopting the YCbCr
+// // color model.
+// func createEncoders(channels []signal.Signal2D, opts CodecOptions) []*ezw.Encoder {
+// 	encoders := make([]*ezw.Encoder, len(channels))
 
-	for i := range channels {
-		e := ezw.NewEncoder()
-		e.Init(channels[i], opts.DecompositionLevel)
-		encoders[i] = e
-	}
+// 	for i := range channels {
+// 		e := ezw.NewEncoder()
+// 		e.Init(channels[i], opts.DecompositionLevel)
+// 		encoders[i] = e
+// 	}
 
-	return encoders
-}
+// 	return encoders
+// }
 
 func getImageChannels(img image.Image) []signal.Signal2D {
 	Y, Cb, Cr := imageutils.ExtractYCbCrComponents(img)

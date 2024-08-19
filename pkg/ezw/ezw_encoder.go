@@ -7,6 +7,7 @@ import (
 	"io"
 	"math"
 
+	"github.com/jnafolayan/sip/pkg/codec"
 	"github.com/jnafolayan/sip/pkg/signal"
 )
 
@@ -34,10 +35,10 @@ func NewEncoder() *Encoder {
 }
 
 // Init prepares the encoder for subsequent EZW coding passes
-func (e *Encoder) Init(coeffs signal.Signal2D, decompLevel int) error {
+func (e *Encoder) Init(coeffs signal.Signal2D, opts codec.CodecOptions) error {
 	width, height := coeffs.Size()
 	e.signal = coeffs
-	e.level = decompLevel
+	e.level = opts.DecompositionLevel
 	e.dominantList = e.flattenSource()
 	e.subordinateList = make([]SignificantCoeff, 0, width*height)
 	e.output = new(bytes.Buffer)

@@ -29,6 +29,7 @@ type Encoder struct {
 	threshold       int
 	level           int
 	output          *bytes.Buffer
+	doDominant      bool
 }
 
 func NewEncoder() *Encoder {
@@ -44,6 +45,7 @@ func (e *Encoder) Init(coeffs signal.Signal2D, opts codec.CodecOptions) error {
 	e.subordinateList = make([]SignificantCoeff, 0, width*height)
 	e.output = new(bytes.Buffer)
 	e.threshold = int(math.Pow(2, math.Floor(math.Log2(findMaxCoeff(coeffs)))))
+	e.doDominant = true
 
 	return nil
 }
@@ -99,8 +101,12 @@ func (e *Encoder) Next() error {
 		return ErrStopped
 	}
 
-	e.SignificancePass()
-	e.RefinementPass()
+	if e.doDominant {
+		e.SignificancePass()
+	} else {
+		e.RefinementPass()
+	}
+	e.doDominant = !e.doDominant
 	e.threshold /= 2
 
 	return nil
@@ -125,7 +131,8 @@ func (e *Encoder) SignificancePass() {
 				sCoeff.Symbol = SymbolNG
 			}
 			// TODO: should it be written?
-			// e.write(sCoeff)
+			sCoeff.Value = 0
+			e.write(sCoeff)
 			e.subordinateList = append(e.subordinateList, sCoeff)
 			markedForDeletion = append(markedForDeletion, coeffIndex)
 		} else {
@@ -150,19 +157,30 @@ func (e *Encoder) SignificancePass() {
 }
 
 func (e *Encoder) RefinementPass() {
-	var abs signal.SignalCoeff
+	// var abs signal.SignalCoeff
 	T := float64(e.threshold)
-	upperT := T * 2
-	midT := T + (upperT-T)/2
+	// upperT := T * 2
+	// midT := T + (upperT-T)/2
+	midT := T / 2
 	for _, coeff := range e.subordinateList {
-		abs = math.Abs(coeff.Value)
-		if abs >= T && abs < midT {
-			coeff.Symbol = SymbolLow
-			e.write(coeff)
-		} else if abs >= midT && abs <= upperT {
+		if coeff.Value-T >= 0 {
+			coeff.Value -= T
+		}
+		if coeff.Value >= midT {
 			coeff.Symbol = SymbolHigh
 			e.write(coeff)
+		} else {
+			coeff.Symbol = SymbolLow
+			e.write(coeff)
 		}
+		// abs = math.Abs(coeff.Value)
+		// if abs >= T && abs < midT {
+		// 	coeff.Symbol = SymbolLow
+		// 	e.write(coeff)
+		// } else if abs >= midT && abs <= upperT {
+		// 	coeff.Symbol = SymbolHigh
+		// 	e.write(coeff)
+		// }
 	}
 }
 

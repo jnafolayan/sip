@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"image"
 	"io"
+	"sync"
 
 	"github.com/jnafolayan/sip/pkg/codec"
 	"github.com/jnafolayan/sip/pkg/signal"
@@ -16,17 +17,24 @@ import (
 type ImageDecoder struct {
 	wavelet      wavelet.Wavelet
 	destSize     image.Rectangle
+	channels     []signal.Signal2D
 	codecOptions codec.CodecOptions
 }
 
 func NewImageDecoder(destSize image.Rectangle, codecOpts codec.CodecOptions) *ImageDecoder {
+	channels := make([]signal.Signal2D, 3)
 	return &ImageDecoder{
 		destSize:     destSize,
+		channels:     channels,
 		codecOptions: codecOpts,
 	}
 }
 
-func (id *ImageDecoder) Init(src string) error {
+func (id *ImageDecoder) SetDestSize(size image.Rectangle) {
+	id.destSize = size
+}
+
+func (id *ImageDecoder) Init() error {
 	w, err := codec.GetWaveletFamily(id.codecOptions)
 	if err != nil {
 		return err
@@ -35,104 +43,138 @@ func (id *ImageDecoder) Init(src string) error {
 	return nil
 }
 
-func (id *ImageDecoder) DecodeFrame(r io.Reader) ([]signal.Signal2D, error) {
+func (id *ImageDecoder) ReconstructChannels() []signal.Signal2D {
+	w := id.wavelet
+	channels := id.channels
+	width, height := id.destSize.Dx(), id.destSize.Dy()
+	fmt.Println(width, height)
+
+	wg := sync.WaitGroup{}
+	wg.Add(len(channels))
+
+	recon := make([]signal.Signal2D, len(channels))
+	for i, channel := range channels {
+		go func() {
+			r := w.InverseTransform(channel)
+			r = r.Slice(0, 0, width, height)
+			recon[i] = r
+			wg.Done()
+		}()
+	}
+
+	wg.Wait()
+
+	return recon
+}
+
+func (id *ImageDecoder) DecodeFrame(r io.Reader) error {
 	var marker byte
 	var err error
 
-	channels := make([]signal.Signal2D, 3)
+	channels := id.channels
 
 	buf := bufio.NewReader(r)
 
 	err = binary.Read(buf, binary.BigEndian, &marker)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	if marker != StartOfImageMarker {
-		return nil, errors.New("expected start of image marker")
+		return errors.New("expected start of image marker")
 	}
 
 	var width, height uint16
 	err = binary.Read(buf, binary.BigEndian, &width)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	err = binary.Read(buf, binary.BigEndian, &height)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	err = binary.Read(buf, binary.BigEndian, &marker)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	if marker != StartOfChannelMarker {
-		return nil, errors.New("expected start of channel marker")
+		return errors.New("expected start of channel marker")
 	}
 	channelIndex := 0
 	for channelIndex <= 2 && marker != EndOfImageMarker {
 		var threshold uint8
 		err = binary.Read(buf, binary.BigEndian, &threshold)
 		if err != nil {
-			return nil, err
+			return err
 		}
 
-		upperT := threshold * 2
-		midT := threshold + (upperT-threshold)/2
+		T := float64(threshold)
+		fmt.Println(T)
+		upperT := T * 2
+		midT := T + (upperT-T)/2
 
-		channel := signal.New(int(width), int(height))
-		channels[channelIndex] = channel
+		if channels[channelIndex] == nil {
+			channels[channelIndex] = signal.New(int(width), int(height))
+		}
+
+		channel := channels[channelIndex]
 
 		for {
 			var symbol uint8
 			err = binary.Read(buf, binary.BigEndian, &symbol)
 			if err != nil {
-				return nil, err
+				return err
 			}
 
 			// Row and col
 			var row, col uint16
 			err = binary.Read(buf, binary.BigEndian, &row)
 			if err != nil {
-				return nil, err
+				return err
 			}
 			err = binary.Read(buf, binary.BigEndian, &col)
 			if err != nil {
-				return nil, err
+				return err
 			}
 
 			err = binary.Read(buf, binary.BigEndian, &marker)
 			if err != nil {
-				return nil, err
+				return err
 			}
 			if marker == StartOfChannelMarker || marker == EndOfImageMarker {
 				break
 			}
 
-			var coeff float64
+			coeff := channel[row][col]
 			switch symbol {
 			case SymbolCodes[SymbolZR]:
-				coeff = 0
+				continue
 			case SymbolCodes[SymbolIZ]:
 				fmt.Println("Isolate zerotree")
-				coeff = 0
+				continue
 			case SymbolCodes[SymbolPS]:
-				fmt.Println("SymbolPS")
-				coeff = +float64(threshold)
+				// fmt.Println("SymbolPS")
+				coeff += T
 			case SymbolCodes[SymbolNG]:
-				fmt.Println("SymbolNG")
-				coeff = -float64(threshold)
+				// fmt.Println("SymbolNG")
+				coeff -= T
 			case SymbolCodes[SymbolLow]:
-				coeff = float64(threshold+midT) / 2
+				continue
 			case SymbolCodes[SymbolHigh]:
-				coeff = float64(midT+upperT) / 2
+				if coeff > 0 {
+					coeff += T / 2
+				} else {
+					coeff -= T / 2
+				}
 			default:
 				fmt.Printf("unknown symbol %q", symbol)
 			}
 			channel[row][col] = coeff
+			_ = midT
 
 			err = buf.UnreadByte()
 			if err != nil {
-				return nil, err
+				return err
 			}
 		}
 
@@ -140,8 +182,8 @@ func (id *ImageDecoder) DecodeFrame(r io.Reader) ([]signal.Signal2D, error) {
 	}
 
 	if marker != EndOfImageMarker {
-		return nil, errors.New("expected end of image marker")
+		return errors.New("expected end of image marker")
 	}
 
-	return channels, nil
+	return nil
 }

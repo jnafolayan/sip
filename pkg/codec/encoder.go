@@ -3,7 +3,6 @@ package codec
 import (
 	"fmt"
 	"image"
-	"image/color"
 	"os"
 	"sync"
 	"time"
@@ -68,11 +67,11 @@ func Encode(img image.Image, opts CodecOptions) (image.Image, CompressionResult)
 	originalWidth, originalHeight := imgBounds.X, imgBounds.Y
 	channels = trimFatChannels(channels, originalWidth, originalHeight)
 
-	reconstructed := reconstructImage(channels, img)
+	reconstructed := imageutils.ReconstructImage(channels, img)
 
 	// Reconstruct the original image from the unprocessed (original) channels. Doing this
 	// to overcome precision that might have been lost due to conversion from RGB to YCbCr.
-	originalImage := reconstructImage(imageChannels, img)
+	originalImage := imageutils.ReconstructImage(imageChannels, img)
 	result := computeCompressionResult(originalImage, reconstructed)
 
 	return reconstructed, result
@@ -94,12 +93,12 @@ func EncodeImageData(imageData []uint8, width, height int, opts CodecOptions) ([
 	channels = trimFatChannels(channels, width, height)
 
 	reconstructed := make([]uint8, width*height*4)
-	reconstructed = reconstructImageData(channels, imageData, reconstructed)
+	reconstructed = imageutils.ReconstructImageData(channels, imageData, reconstructed)
 
 	// Reconstruct the original image from the unprocessed (original) channels. Doing this
 	// to overcome precision that might have been lost due to conversion from RGB to YCbCr.
 	originalImageData := make([]uint8, width*height*4)
-	originalImageData = reconstructImageData(imageChannels, imageData, originalImageData)
+	originalImageData = imageutils.ReconstructImageData(imageChannels, imageData, originalImageData)
 	result := computeCompressionResultBetweenImageData(originalImageData, reconstructed, width, height)
 
 	return reconstructed, result
@@ -166,84 +165,4 @@ func trimFatChannels(channels []signal.Signal2D, w, h int) []signal.Signal2D {
 	wg.Wait()
 
 	return trimmedChannels
-}
-
-func reconstructImage(channels []signal.Signal2D, src image.Image) image.Image {
-	width, height := channels[0].Size()
-	img := image.NewRGBA(image.Rect(0, 0, width, height))
-	Y, Cb, Cr := channels[0], channels[1], channels[2]
-
-	var r, g, b uint8
-	var yy, cb, cr float64
-	var alpha uint32
-	var c color.RGBA
-	for y := 0; y < height; y++ {
-		for x := 0; x < width; x++ {
-			yy, cb, cr = Y[y][x], Cb[y][x], Cr[y][x]
-
-			// Clamp the values between 0 ... 255
-			if yy < 0 {
-				yy = 0
-			} else if yy > 255 {
-				yy = 255
-			}
-			if cb < 0 {
-				cb = 0
-			} else if cb > 255 {
-				cb = 255
-			}
-			if cr < 0 {
-				cr = 0
-			} else if cr > 255 {
-				cr = 255
-			}
-
-			_, _, _, alpha = src.At(x, y).RGBA()
-			r, g, b = color.YCbCrToRGB(uint8(yy), uint8(cb), uint8(cr))
-			c = color.RGBA{r, g, b, uint8(alpha >> 8)}
-			img.Set(x, y, c)
-		}
-	}
-
-	return img
-}
-
-func reconstructImageData(channels []signal.Signal2D, original []uint8, out []uint8) []uint8 {
-	width, height := channels[0].Size()
-	Y, Cb, Cr := channels[0], channels[1], channels[2]
-	var r, g, b uint8
-
-	var offset int
-	var yy, cb, cr float64
-	for y := 0; y < height; y++ {
-		for x := 0; x < width; x++ {
-			offset = (x + y*width) * 4
-			yy, cb, cr = Y[y][x], Cb[y][x], Cr[y][x]
-
-			// Clamp the values between 0 ... 255
-			if yy < 0 {
-				yy = 0
-			} else if yy > 255 {
-				yy = 255
-			}
-			if cb < 0 {
-				cb = 0
-			} else if cb > 255 {
-				cb = 255
-			}
-			if cr < 0 {
-				cr = 0
-			} else if cr > 255 {
-				cr = 255
-			}
-
-			r, g, b = color.YCbCrToRGB(uint8(yy), uint8(cb), uint8(cr))
-			out[offset+0] = r
-			out[offset+1] = g
-			out[offset+2] = b
-			out[offset+3] = original[offset+3]
-		}
-	}
-
-	return out
 }

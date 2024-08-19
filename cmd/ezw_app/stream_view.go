@@ -11,6 +11,7 @@ import (
 	"fyne.io/fyne/v2/layout"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
+	"github.com/jnafolayan/sip/internal/imageutils"
 	"github.com/jnafolayan/sip/pkg/codec"
 	"github.com/jnafolayan/sip/pkg/ezw"
 )
@@ -21,9 +22,15 @@ func streamView(win fyne.Window, uri fyne.URI, codecOpts codec.CodecOptions) *fy
 	img.Resize(fyne.NewSize(WIDTH*0.8, 800))
 	img.SetMinSize(img.Size())
 
+	processing := false
+
 	encoder := ezw.NewImageEncoder(codecOpts)
-	decooder := ezw.NewImageDecoder(encoder.SrcSize(), codecOpts)
+	decoder := ezw.NewImageDecoder(encoder.SrcSize(), codecOpts)
 	stepButton := widget.NewButtonWithIcon("Step", theme.ViewRefreshIcon(), func() {
+		if processing {
+			return
+		}
+		processing = true
 		buf := new(bytes.Buffer)
 		err := encoder.Tick(buf)
 		if err != nil {
@@ -32,16 +39,25 @@ func streamView(win fyne.Window, uri fyne.URI, codecOpts codec.CodecOptions) *fy
 		}
 
 		fmt.Println(buf.Len())
-		channels, err := decooder.DecodeFrame(buf)
+		err = decoder.DecodeFrame(buf)
+		buf.Reset()
 		if err != nil {
 			dialog.ShowError(err, win)
-			buf.Reset()
 			return
 		}
 
-		buf.Reset()
-		fmt.Println(channels)
+		channels := decoder.ReconstructChannels()
+		reconstructed := imageutils.ReconstructImageWithAlpha(channels, 255)
+		img.Resource = nil
+		img.Image = reconstructed
+		img.File = ""
+		img.Refresh()
+		processing = false
+
+		// debug.DrawSignal2D(channels[0], image.Rect(0, 0, 15, 15), "temp.jpg")
+
 	})
+
 	stepButton.Resize(fyne.NewSize(100, 40))
 	stepButton.Disable()
 
@@ -52,6 +68,16 @@ func streamView(win fyne.Window, uri fyne.URI, codecOpts codec.CodecOptions) *fy
 			// FIXME: reload*
 			return
 		}
+
+		err = decoder.Init()
+		if err != nil {
+			dialog.ShowError(err, win)
+			// FIXME: reload*
+			return
+		}
+
+		decoder.SetDestSize(encoder.SrcSize())
+
 		stepButton.Enable()
 	}()
 

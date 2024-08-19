@@ -21,11 +21,13 @@ func jsCompressImage(this js.Value, args []js.Value) interface{} {
 	waveletFamily := opts.Get("waveletFamily").String()
 	decompLevel := opts.Get("decompLevel").Int()
 	threshold := opts.Get("threshold").Int()
+	thresholdStrategy := opts.Get("thresholdStrategy").String()
 
 	codecOpts := codec.CodecOptions{
-		Wavelet:            wavelet.WaveletType(waveletFamily),
-		DecompositionLevel: decompLevel,
-		ThresholdingFactor: threshold,
+		Wavelet:              wavelet.WaveletType(waveletFamily),
+		DecompositionLevel:   decompLevel,
+		ThresholdingFactor:   threshold,
+		ThresholdingStrategy: thresholdStrategy,
 	}
 
 	start := time.Now()

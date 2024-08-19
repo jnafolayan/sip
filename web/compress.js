@@ -25,9 +25,9 @@ async function handleWorkerMessage(e) {
         const fileName = `${sourceFileName || "sip" + taskID}-compressed.jpg`;
         const compressedFile = await exportCanvasToJPEG(image, fileName, 0.75);
 
-        result.Ratio = sourceFileSize / compressedFile.size;
+        result.Ratio = sourceFileSize / compressedFile.size * 100;
 
-        ratioElement.innerText = result.Ratio.toFixed(1);
+        ratioElement.innerText = result.Ratio.toFixed(2);
         psnrElement.innerText = result.PSNR.toFixed(2);
 
         console.log(`Took ${result.Time}s to compress.`);

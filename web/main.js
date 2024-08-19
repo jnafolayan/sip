@@ -77,6 +77,7 @@ function setupEvents() {
     useControl("waveletFamily", controlCompressionOption("waveletFamily"));
     useControl("decompLevel", controlCompressionOption("decompLevel"));
     useControl("threshold", controlCompressionOption("threshold"));
+    useControl("thresholdStrategy", controlCompressionOption("thresholdStrategy"));
 
     window.addEventListener("resize", handleWindowResize);
     handleWindowResize();
@@ -115,6 +116,7 @@ function createAppState() {
             waveletFamily: "haar",
             decompLevel: 1,
             threshold: 10,
+            thresholdStrategy: "hard",
         },
         compressed: null,
         compressing: false,

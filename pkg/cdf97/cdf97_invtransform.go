@@ -25,18 +25,6 @@ func (cdf *CDF97Wavelet) InverseTransform(s signal.Signal2D) signal.Signal2D {
 		height *= 2
 	}
 
-	// Clamp the values between 0 ... 255
-	width, height = s.Size()
-	for y := 0; y < height; y++ {
-		for x := 0; x < width; x++ {
-			if result[y][x] < 0 {
-				result[y][x] = 0
-			} else if result[y][x] > 255 {
-				result[y][x] = 255
-			}
-		}
-	}
-
 	return result
 }
 

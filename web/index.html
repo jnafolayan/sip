@@ -55,17 +55,24 @@
                     <input id="threshold" type="number" min="0" max="255" value="10" step="1" />
                 </div>
                 <div class="controls__item">
+                    <label for="thresholdStrategy">Threshold strategy</label>
+                    <select id="thresholdStrategy" name="thresholdStrategy">
+                        <option value="hard" selected>Hard</option>
+                        <option value="soft">Soft</option>
+                    </select>
+                </div>
+                <div class="controls__item">
                     <button id="compressButton" class="compress-button">Compress</button>
                 </div>
             </div>
             <button id="backButton" class="back-button">BACK</button>
             <div class="results">
                 <div class="results__item">
-                    <span>PSNR</span>
+                    <span>PSNR <span class="results__unit">(dB)</span></span>
                     <span id="psnr">0.0</span>
                 </div>
                 <div class="results__item">
-                    <span>Compression ratio</span>
+                    <span>Compression ratio <span class="results__unit">(%)</span></span>
                     <span id="compressionRatio">0.0</span>
                 </div>
             </div>

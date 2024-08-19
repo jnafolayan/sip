@@ -121,7 +121,7 @@ body {
     bottom: 0;
     right: 0;
     width: 320px;
-    height: 330px;
+    height: 410px;
     background-color: var(--bg2);
     border-top-left-radius: 8px;
 }
@@ -201,6 +201,11 @@ body {
 
 .results__item:nth-of-type(even) {
     border-left: 1px solid #555;
+}
+
+.results__unit {
+    font-size: 0.7rem;
+    margin-left: -0.2rem;
 }
 
 .back-button {

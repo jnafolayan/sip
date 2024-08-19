@@ -58,6 +58,7 @@ var compressCmd = &cli.Command{
 			return err
 		}
 
+		fmt.Printf("Took %fs to compress.\n", result.Time)
 		fmt.Println("PSNR:", result.PSNR)
 		fmt.Println("SSIM:", result.SSIM)
 		fmt.Println("Ratio:", result.Ratio)

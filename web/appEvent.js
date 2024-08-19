@@ -14,6 +14,6 @@ class AppEvent {
 
   fire(data) {
     this.subscribers.forEach(cb => cb(data));
-    console.log(`Event fired: ${this.name}`, data);
+    // console.log(`Event fired: ${this.name}`, data);
   }
 }

@@ -1,10 +1,12 @@
 package ezw
 
 import (
+	"bytes"
 	"encoding/binary"
 	"fmt"
 	"image"
 	"io"
+	"strings"
 	"sync"
 
 	"github.com/jnafolayan/sip/internal/imageutils"
@@ -39,7 +41,7 @@ func (ie *ImageEncoder) Init(src string) error {
 
 	channels := getImageChannels(src)
 	transformed := transformChannels(w, channels, ie.codecOptions)
-	encoders := createEncoders(channels, ie.codecOptions)
+	encoders := createEncoders(transformed, ie.codecOptions)
 	ie.encoders = encoders
 
 	ie.srcWidth, ie.srcHeight = channels[0].Size()
@@ -58,6 +60,7 @@ func (ie *ImageEncoder) Tick(w io.Writer) error {
 	binary.Write(w, binary.BigEndian, uint16(ie.frameHeight))
 
 	for _, e := range ie.encoders {
+		e.SetEncodeMode(EncodeBinary)
 		binary.Write(w, binary.BigEndian, StartOfChannelMarker)
 		binary.Write(w, binary.BigEndian, uint8(e.threshold))
 
@@ -71,6 +74,28 @@ func (ie *ImageEncoder) Tick(w io.Writer) error {
 
 	binary.Write(w, binary.BigEndian, EndOfImageMarker)
 
+	return nil
+}
+
+func (ie *ImageEncoder) TickJSON(w io.Writer) error {
+	frames := make([]string, len(ie.encoders))
+	buf := new(bytes.Buffer)
+	for i, e := range ie.encoders {
+		frames[i] = "null"
+		e.SetEncodeMode(EncodeJSON)
+
+		err := e.Next()
+		if err != nil {
+			continue
+		}
+
+		e.Flush(buf)
+
+		frames[i] = buf.String()
+		buf.Reset()
+	}
+
+	w.Write([]byte(fmt.Sprintf("[%s]", strings.Join(frames, ", "))))
 	return nil
 }
 

@@ -3,7 +3,9 @@ package ezw
 import (
 	"bytes"
 	"encoding/binary"
+	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"math"
 
@@ -18,22 +20,49 @@ type FlatSignalCoeff struct {
 }
 
 type SignificantCoeff struct {
-	FlatSignalCoeff
-	Symbol SymbolType
+	Coeff     FlatSignalCoeff
+	Symbol    SymbolType
+	Value     signal.SignalCoeff
+	Threshold float64
+}
+
+type EncodeMode int
+
+const (
+	EncodeJSON EncodeMode = iota
+	EncodeBinary
+)
+
+type JSONFrame struct {
+	FrameWidth   int                    `json:"frameWidth"`
+	FrameHeight  int                    `json:"frameHeight"`
+	Threshold    int                    `json:"threshold"`
+	Coefficients []JSONFrameCoefficient `json:"coefficients"`
+}
+
+type JSONFrameCoefficient struct {
+	Symbol int     `json:"symbol"`
+	Row    int     `json:"row"`
+	Col    int     `json:"col"`
+	Value  float64 `json:"value"`
 }
 
 type Encoder struct {
+	encodeMode      EncodeMode
+	jsonFrame       *JSONFrame
 	signal          signal.Signal2D
 	dominantList    []FlatSignalCoeff
 	subordinateList []SignificantCoeff
 	threshold       int
 	level           int
-	output          *bytes.Buffer
+	binaryBuffer    *bytes.Buffer
 	doDominant      bool
 }
 
 func NewEncoder() *Encoder {
-	return &Encoder{}
+	return &Encoder{
+		encodeMode: EncodeBinary,
+	}
 }
 
 // Init prepares the encoder for subsequent EZW coding passes
@@ -43,11 +72,21 @@ func (e *Encoder) Init(coeffs signal.Signal2D, opts codec.CodecOptions) error {
 	e.level = opts.DecompositionLevel
 	e.dominantList = e.flattenSource()
 	e.subordinateList = make([]SignificantCoeff, 0, width*height)
-	e.output = new(bytes.Buffer)
+	e.binaryBuffer = new(bytes.Buffer)
 	e.threshold = int(math.Pow(2, math.Floor(math.Log2(findMaxCoeff(coeffs)))))
 	e.doDominant = true
+	e.jsonFrame = &JSONFrame{
+		FrameWidth:   e.signal.Bounds().Dx(),
+		FrameHeight:  e.signal.Bounds().Dy(),
+		Coefficients: make([]JSONFrameCoefficient, 0),
+		Threshold:    e.threshold,
+	}
 
 	return nil
+}
+
+func (e *Encoder) SetEncodeMode(mode EncodeMode) {
+	e.encodeMode = mode
 }
 
 func findMaxCoeff(s signal.Signal2D) signal.SignalCoeff {
@@ -65,10 +104,22 @@ func findMaxCoeff(s signal.Signal2D) signal.SignalCoeff {
 }
 
 func (e *Encoder) write(coeff SignificantCoeff) {
-	e.output.Write(e.encodeCoefficient(coeff))
+	switch e.encodeMode {
+	case EncodeBinary:
+		e.binaryBuffer.Write(e.encodeBinaryCoefficient(coeff))
+	case EncodeJSON:
+		e.writeJSONCoefficient(coeff)
+	default:
+		panic(fmt.Sprintf("unknown encode mode: %d", e.encodeMode))
+	}
 }
 
-func (e *Encoder) encodeCoefficient(coeff SignificantCoeff) []byte {
+func (e *Encoder) writeJSONCoefficient(coeff SignificantCoeff) {
+	jsonCoeff := JSONFrameCoefficient{int(coeff.Symbol), coeff.Coeff.Row, coeff.Coeff.Col, (coeff.Coeff.Value)}
+	e.jsonFrame.Coefficients = append(e.jsonFrame.Coefficients, jsonCoeff)
+}
+
+func (e *Encoder) encodeBinaryCoefficient(coeff SignificantCoeff) []byte {
 	buf := new(bytes.Buffer)
 
 	// Encode symbol
@@ -76,8 +127,8 @@ func (e *Encoder) encodeCoefficient(coeff SignificantCoeff) []byte {
 	binary.Write(buf, binary.BigEndian, symbolBits)
 
 	// Encode row and col indices
-	row := uint16(coeff.Row)
-	col := uint16(coeff.Col)
+	row := uint16(coeff.Coeff.Row)
+	col := uint16(coeff.Coeff.Col)
 	binary.Write(buf, binary.BigEndian, row)
 	binary.Write(buf, binary.BigEndian, col)
 
@@ -88,10 +139,16 @@ func (e *Encoder) encodeCoefficient(coeff SignificantCoeff) []byte {
 	return buf.Bytes()
 }
 
-// Flush writes the current output and clears the output buffer.
+// Flush writes the current binaryBuffer and clears the binaryBuffer buffer.
 func (e *Encoder) Flush(w io.Writer) {
-	w.Write(e.output.Bytes())
-	e.output.Reset()
+	switch e.encodeMode {
+	case EncodeBinary:
+		w.Write(e.binaryBuffer.Bytes())
+		e.binaryBuffer.Reset()
+	case EncodeJSON:
+		json.NewEncoder(w).Encode(e.jsonFrame)
+		e.jsonFrame = nil
+	}
 }
 
 var ErrStopped = errors.New("stopped encoding")
@@ -100,14 +157,25 @@ func (e *Encoder) Next() error {
 	if e.threshold <= 0 {
 		return ErrStopped
 	}
-
-	if e.doDominant {
-		e.SignificancePass()
-	} else {
-		e.RefinementPass()
+	if e.threshold <= 1 && !e.doDominant {
+		return ErrStopped
 	}
-	e.doDominant = !e.doDominant
+
+	e.jsonFrame = &JSONFrame{
+		FrameWidth:   e.signal.Bounds().Dx(),
+		FrameHeight:  e.signal.Bounds().Dy(),
+		Coefficients: make([]JSONFrameCoefficient, 0),
+		Threshold:    e.threshold,
+	}
+
+	// if e.doDominant {
+	e.SignificancePass()
+	// } else {
+	e.RefinementPass()
 	e.threshold /= 2
+	// }
+
+	e.doDominant = !e.doDominant
 
 	return nil
 }
@@ -121,18 +189,19 @@ func (e *Encoder) SignificancePass() {
 			continue
 		}
 		sCoeff := SignificantCoeff{
-			FlatSignalCoeff: coeff,
-			Symbol:          SymbolNone,
+			Coeff:  coeff,
+			Symbol: SymbolNone,
+			Value:  coeff.Value,
 		}
 		if math.Abs(coeff.Value) >= T {
-			if coeff.Value >= 0 {
+			if coeff.Value > 0 {
 				sCoeff.Symbol = SymbolPS
 			} else {
 				sCoeff.Symbol = SymbolNG
 			}
 			// TODO: should it be written?
-			sCoeff.Value = 0
 			e.write(sCoeff)
+			sCoeff.Threshold = T
 			e.subordinateList = append(e.subordinateList, sCoeff)
 			markedForDeletion = append(markedForDeletion, coeffIndex)
 		} else {
@@ -157,30 +226,16 @@ func (e *Encoder) SignificancePass() {
 }
 
 func (e *Encoder) RefinementPass() {
-	// var abs signal.SignalCoeff
 	T := float64(e.threshold)
-	// upperT := T * 2
-	// midT := T + (upperT-T)/2
-	midT := T / 2
-	for _, coeff := range e.subordinateList {
-		if coeff.Value-T >= 0 {
-			coeff.Value -= T
-		}
-		if coeff.Value >= midT {
-			coeff.Symbol = SymbolHigh
-			e.write(coeff)
+	for _, sCoeff := range e.subordinateList {
+		Q := sCoeff.Threshold + T/2
+		abs := math.Abs(sCoeff.Value)
+		if abs >= Q {
+			sCoeff.Symbol = SymbolHigh
 		} else {
-			coeff.Symbol = SymbolLow
-			e.write(coeff)
+			sCoeff.Symbol = SymbolLow
 		}
-		// abs = math.Abs(coeff.Value)
-		// if abs >= T && abs < midT {
-		// 	coeff.Symbol = SymbolLow
-		// 	e.write(coeff)
-		// } else if abs >= midT && abs <= upperT {
-		// 	coeff.Symbol = SymbolHigh
-		// 	e.write(coeff)
-		// }
+		e.write(sCoeff)
 	}
 }
 

@@ -3,6 +3,7 @@ package ezw
 import (
 	"bufio"
 	"encoding/binary"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"image"
@@ -47,7 +48,6 @@ func (id *ImageDecoder) ReconstructChannels() []signal.Signal2D {
 	w := id.wavelet
 	channels := id.channels
 	width, height := id.destSize.Dx(), id.destSize.Dy()
-	fmt.Println(width, height)
 
 	wg := sync.WaitGroup{}
 	wg.Add(len(channels))
@@ -67,7 +67,61 @@ func (id *ImageDecoder) ReconstructChannels() []signal.Signal2D {
 	return recon
 }
 
-func (id *ImageDecoder) DecodeFrame(r io.Reader) error {
+func (id *ImageDecoder) DecodeJSONFrame(r io.Reader) error {
+	frames := make([]JSONFrame, 3)
+	err := json.NewDecoder(r).Decode(&frames)
+	if err != nil {
+		return fmt.Errorf("error decoding json frame: %w", err)
+	}
+
+	for idx, jsonFrame := range frames {
+		fmt.Printf("Channel %d: %d coeffs, %d T\n", idx, len(jsonFrame.Coefficients), jsonFrame.Threshold)
+		for _, coeff := range jsonFrame.Coefficients {
+			if id.channels[idx] == nil {
+				id.channels[idx] = signal.New(jsonFrame.FrameWidth, jsonFrame.FrameHeight)
+			}
+			channel := id.channels[idx]
+
+			symbol, row, col, value := coeff.Symbol, coeff.Row, coeff.Col, coeff.Value
+			T := float64(jsonFrame.Threshold)
+			upperT := T * 2
+			midT := T + (upperT-T)/2
+			_ = midT
+
+			v := channel[row][col]
+			switch SymbolType(symbol) {
+			case SymbolZR:
+				continue
+			case SymbolIZ:
+				fmt.Println("Isolate zerotree")
+				continue
+			case SymbolPS:
+				// fmt.Println("SymbolPS")
+				v = T
+			case SymbolNG:
+				// fmt.Println("SymbolNG")
+				v = -T
+			case SymbolLow:
+				continue
+			case SymbolHigh:
+				if v < 0 {
+					v -= T / 2
+				} else {
+					v += T / 2
+				}
+			default:
+				fmt.Printf("unknown symbol: %q\n", symbol)
+			}
+
+			v = float64(value)
+			channel[row][col] = v
+		}
+	}
+
+	return nil
+}
+
+func (id *ImageDecoder) DecodeBinaryFrame(r io.Reader) error {
 	var marker byte
 	var err error
 

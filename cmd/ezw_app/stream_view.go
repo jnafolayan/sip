@@ -2,7 +2,6 @@ package main
 
 import (
 	"bytes"
-	"fmt"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/canvas"
@@ -32,14 +31,13 @@ func streamView(win fyne.Window, uri fyne.URI, codecOpts codec.CodecOptions) *fy
 		}
 		processing = true
 		buf := new(bytes.Buffer)
-		err := encoder.Tick(buf)
+		err := encoder.TickJSON(buf)
 		if err != nil {
 			dialog.ShowError(err, win)
 			return
 		}
 
-		fmt.Println(buf.Len())
-		err = decoder.DecodeFrame(buf)
+		err = decoder.DecodeJSONFrame(buf)
 		buf.Reset()
 		if err != nil {
 			dialog.ShowError(err, win)

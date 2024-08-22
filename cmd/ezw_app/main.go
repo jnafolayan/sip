@@ -15,7 +15,7 @@ func main() {
 	win := a.NewWindow("EZW coding")
 	win.Resize(fyne.NewSize(WIDTH, HEIGHT))
 	// win.SetContent(homeView(win))
-	win.SetContent(streamView(win, storage.NewFileURI(baseDir+"/pexels.jpg"), codec.DefaultCodecOpts))
+	win.SetContent(streamView(win, storage.NewFileURI(baseDir+"/lena.png"), codec.DefaultCodecOpts))
 
 	win.ShowAndRun()
 }

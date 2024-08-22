@@ -20,10 +20,9 @@ type FlatSignalCoeff struct {
 }
 
 type SignificantCoeff struct {
-	Coeff     FlatSignalCoeff
-	Symbol    SymbolType
-	Value     signal.SignalCoeff
-	Threshold float64
+	FlatSignalCoeff
+	Symbol   SymbolType
+	SubValue float64
 }
 
 type EncodeMode int
@@ -40,12 +39,7 @@ type JSONFrame struct {
 	Coefficients []JSONFrameCoefficient `json:"coefficients"`
 }
 
-type JSONFrameCoefficient struct {
-	Symbol int     `json:"symbol"`
-	Row    int     `json:"row"`
-	Col    int     `json:"col"`
-	Value  float64 `json:"value"`
-}
+type JSONFrameCoefficient = [3]int
 
 type Encoder struct {
 	encodeMode      EncodeMode
@@ -115,7 +109,7 @@ func (e *Encoder) write(coeff SignificantCoeff) {
 }
 
 func (e *Encoder) writeJSONCoefficient(coeff SignificantCoeff) {
-	jsonCoeff := JSONFrameCoefficient{int(coeff.Symbol), coeff.Coeff.Row, coeff.Coeff.Col, (coeff.Coeff.Value)}
+	jsonCoeff := JSONFrameCoefficient{int(coeff.Symbol), coeff.Row, coeff.Col}
 	e.jsonFrame.Coefficients = append(e.jsonFrame.Coefficients, jsonCoeff)
 }
 
@@ -127,8 +121,8 @@ func (e *Encoder) encodeBinaryCoefficient(coeff SignificantCoeff) []byte {
 	binary.Write(buf, binary.BigEndian, symbolBits)
 
 	// Encode row and col indices
-	row := uint16(coeff.Coeff.Row)
-	col := uint16(coeff.Coeff.Col)
+	row := uint16(coeff.Row)
+	col := uint16(coeff.Col)
 	binary.Write(buf, binary.BigEndian, row)
 	binary.Write(buf, binary.BigEndian, col)
 
@@ -157,9 +151,6 @@ func (e *Encoder) Next() error {
 	if e.threshold <= 0 {
 		return ErrStopped
 	}
-	if e.threshold <= 1 && !e.doDominant {
-		return ErrStopped
-	}
 
 	e.jsonFrame = &JSONFrame{
 		FrameWidth:   e.signal.Bounds().Dx(),
@@ -174,7 +165,6 @@ func (e *Encoder) Next() error {
 	e.RefinementPass()
 	e.threshold /= 2
 	// }
-
 	e.doDominant = !e.doDominant
 
 	return nil
@@ -189,9 +179,8 @@ func (e *Encoder) SignificancePass() {
 			continue
 		}
 		sCoeff := SignificantCoeff{
-			Coeff:  coeff,
-			Symbol: SymbolNone,
-			Value:  coeff.Value,
+			FlatSignalCoeff: coeff,
+			Symbol:          SymbolNone,
 		}
 		if math.Abs(coeff.Value) >= T {
 			if coeff.Value > 0 {
@@ -201,7 +190,7 @@ func (e *Encoder) SignificancePass() {
 			}
 			// TODO: should it be written?
 			e.write(sCoeff)
-			sCoeff.Threshold = T
+			sCoeff.SubValue = math.Abs(sCoeff.Value)
 			e.subordinateList = append(e.subordinateList, sCoeff)
 			markedForDeletion = append(markedForDeletion, coeffIndex)
 		} else {
@@ -226,16 +215,19 @@ func (e *Encoder) SignificancePass() {
 }
 
 func (e *Encoder) RefinementPass() {
+	var abs signal.SignalCoeff
 	T := float64(e.threshold)
-	for _, sCoeff := range e.subordinateList {
-		Q := sCoeff.Threshold + T/2
-		abs := math.Abs(sCoeff.Value)
-		if abs >= Q {
-			sCoeff.Symbol = SymbolHigh
-		} else {
-			sCoeff.Symbol = SymbolLow
+	upperT := T * 2
+	midT := (T + upperT) / 2
+	for _, coeff := range e.subordinateList {
+		abs = math.Abs(coeff.Value)
+		if abs >= T && abs < midT {
+			coeff.Symbol = SymbolLow
+			e.write(coeff)
+		} else if abs >= midT && abs <= upperT {
+			coeff.Symbol = SymbolHigh
+			e.write(coeff)
 		}
-		e.write(sCoeff)
 	}
 }
 

@@ -82,13 +82,13 @@ func (id *ImageDecoder) DecodeJSONFrame(r io.Reader) error {
 			}
 			channel := id.channels[idx]
 
-			symbol, row, col, value := coeff.Symbol, coeff.Row, coeff.Col, coeff.Value
+			symbol, row, col := coeff[0], coeff[1], coeff[2]
 			T := float64(jsonFrame.Threshold)
 			upperT := T * 2
 			midT := T + (upperT-T)/2
 			_ = midT
 
-			v := channel[row][col]
+			value := channel[row][col]
 			switch SymbolType(symbol) {
 			case SymbolZR:
 				continue
@@ -97,37 +97,38 @@ func (id *ImageDecoder) DecodeJSONFrame(r io.Reader) error {
 				continue
 			case SymbolPS:
 				// fmt.Println("SymbolPS")
-				v = T
+				value = T
 			case SymbolNG:
 				// fmt.Println("SymbolNG")
-				v = -T
+				value = -T
 			case SymbolLow:
 				continue
 			case SymbolHigh:
-				if v < 0 {
-					v -= T / 2
+				if value > 0 {
+					value += T / 2
 				} else {
-					v += T / 2
+					value -= T / 2
 				}
 			default:
 				fmt.Printf("unknown symbol: %q\n", symbol)
 			}
 
-			v = float64(value)
-			channel[row][col] = v
+			channel[row][col] = value
 		}
 	}
 
 	return nil
 }
 
-func (id *ImageDecoder) DecodeBinaryFrame(r io.Reader) error {
+func (id *ImageDecoder) DecodeBinaryFrame(r io.ReadWriter) error {
 	var marker byte
 	var err error
 
 	channels := id.channels
 
-	buf := bufio.NewReader(r)
+	bufWriter := bufio.NewWriter(r)
+	bufReader := bufio.NewReader(r)
+	buf := bufio.NewReadWriter(bufReader, bufWriter)
 
 	err = binary.Read(buf, binary.BigEndian, &marker)
 	if err != nil {
@@ -163,7 +164,6 @@ func (id *ImageDecoder) DecodeBinaryFrame(r io.Reader) error {
 		}
 
 		T := float64(threshold)
-		fmt.Println(T)
 		upperT := T * 2
 		midT := T + (upperT-T)/2
 
@@ -189,14 +189,6 @@ func (id *ImageDecoder) DecodeBinaryFrame(r io.Reader) error {
 			err = binary.Read(buf, binary.BigEndian, &col)
 			if err != nil {
 				return err
-			}
-
-			err = binary.Read(buf, binary.BigEndian, &marker)
-			if err != nil {
-				return err
-			}
-			if marker == StartOfChannelMarker || marker == EndOfImageMarker {
-				break
 			}
 
 			coeff := channel[row][col]
@@ -226,7 +218,15 @@ func (id *ImageDecoder) DecodeBinaryFrame(r io.Reader) error {
 			channel[row][col] = coeff
 			_ = midT
 
-			err = buf.UnreadByte()
+			err = binary.Read(buf, binary.BigEndian, &marker)
+			if err != nil {
+				return err
+			}
+			if marker == StartOfChannelMarker || marker == EndOfImageMarker {
+				break
+			}
+
+			err = binary.Write(buf, binary.BigEndian, marker)
 			if err != nil {
 				return err
 			}

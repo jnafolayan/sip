@@ -20,6 +20,7 @@ func streamView(win fyne.Window, uri fyne.URI, codecOpts codec.CodecOptions) *fy
 	img.FillMode = canvas.ImageFillContain
 	img.Resize(fyne.NewSize(WIDTH*0.8, 800))
 	img.SetMinSize(img.Size())
+	img.Translucency = 1
 
 	processing := false
 
@@ -50,6 +51,7 @@ func streamView(win fyne.Window, uri fyne.URI, codecOpts codec.CodecOptions) *fy
 		img.Image = reconstructed
 		img.File = ""
 		img.Refresh()
+		img.Translucency = 0
 		processing = false
 
 		// debug.DrawSignal2D(channels[0], image.Rect(0, 0, 15, 15), "temp.jpg")

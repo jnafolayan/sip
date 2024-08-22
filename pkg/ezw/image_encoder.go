@@ -16,6 +16,7 @@ import (
 )
 
 type ImageEncoder struct {
+	channels []signal.Signal2D
 	encoders []*Encoder
 	wavelet  wavelet.Wavelet
 
@@ -40,7 +41,10 @@ func (ie *ImageEncoder) Init(src string) error {
 	ie.wavelet = w
 
 	channels := getImageChannels(src)
+	ie.channels = channels
+
 	transformed := transformChannels(w, channels, ie.codecOptions)
+
 	encoders := createEncoders(transformed, ie.codecOptions)
 	ie.encoders = encoders
 

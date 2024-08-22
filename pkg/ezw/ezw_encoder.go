@@ -172,7 +172,7 @@ func (e *Encoder) Next() error {
 	e.SignificancePass()
 	// } else {
 	e.RefinementPass()
-	e.threshold /= 2
+	e.threshold -= 20
 	// }
 
 	e.doDominant = !e.doDominant

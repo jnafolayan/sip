@@ -20,11 +20,13 @@ func streamView(win fyne.Window, uri fyne.URI, codecOpts codec.CodecOptions) *fy
 	img.FillMode = canvas.ImageFillContain
 	img.Resize(fyne.NewSize(WIDTH*0.8, 800))
 	img.SetMinSize(img.Size())
+	img.Translucency = 1
 
 	processing := false
 
 	encoder := ezw.NewImageEncoder(codecOpts)
 	decoder := ezw.NewImageDecoder(encoder.SrcSize(), codecOpts)
+
 	stepButton := widget.NewButtonWithIcon("Step", theme.ViewRefreshIcon(), func() {
 		if processing {
 			return
@@ -49,6 +51,7 @@ func streamView(win fyne.Window, uri fyne.URI, codecOpts codec.CodecOptions) *fy
 		img.Resource = nil
 		img.Image = reconstructed
 		img.File = ""
+		img.Translucency = 0
 		img.Refresh()
 		processing = false
 

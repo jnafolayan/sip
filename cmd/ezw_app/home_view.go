@@ -32,7 +32,7 @@ func configForm(win fyne.Window, codec *codec.CodecOptions) *fyne.Container {
 	level.SetValue(float64(codec.DecompositionLevel))
 
 	thresholdLabelData := binding.NewInt()
-	thresholdLabel := binding.NewSprintf("Level of decomposition (%d)", thresholdLabelData)
+	thresholdLabel := binding.NewSprintf("Threshold (%d)", thresholdLabelData)
 	threshold := widget.NewSlider(0, 255)
 	threshold.Step = 1
 	threshold.OnChanged = func(f float64) {
